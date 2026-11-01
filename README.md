@@ -31,6 +31,10 @@ pip install edge-tts
 python3 tools/generate_audio.py
 ```
 
+## Language
+
+Choose German, English or Urdu from the dropdown at the top of the page, or press `L` to cycle through them.
+
 ## Keyboard shortcuts
 
 | Key | Action | Where it works |

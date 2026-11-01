@@ -10,7 +10,7 @@
   var TOGGLE_KEY = "lid-show-english-v1"; // legacy on/off value, read once to migrate
   var LANGUAGE_KEY = "lid-language-v1";
   var LANGUAGES = ["de", "en", "ur"];
-  var LANGUAGE_LABEL = { de: "DE", en: "EN", ur: "اردو" };
+  var LANGUAGE_LABEL = { de: "Deutsch", en: "English", ur: "اردو" };
   var LANGUAGE_LOCALE = { de: "de-DE", en: "en-GB", ur: "ur-PK" };
   var THEME_KEY = "lid-theme-v1";
   var FONT_SCALE_KEY = "lid-font-scale-v1";
@@ -60,7 +60,7 @@
   var STRINGS = {
     subtitle: { de: "Testtrainer", en: "Test Trainer", ur: "ٹیسٹ ٹرینر" },
     statsNav: { de: "Statistik", en: "Stats", ur: "اعداد و شمار" },
-    langToggleTitleBase: { de: "Übersetzung umschalten", en: "Switch translation", ur: "ترجمہ تبدیل کریں" },
+    langSelectTitle: { de: "Sprache wählen", en: "Choose language", ur: "زبان منتخب کریں" },
     themeTitle: { de: "Design", en: "Theme", ur: "تھیم" },
     themeTapToChange: { de: "zum Ändern tippen", en: "tap to change", ur: "تبدیل کرنے کے لیے کلک کریں" },
     themeAria: { de: "Farbschema", en: "Color theme", ur: "رنگوں کی تھیم" },
@@ -288,8 +288,7 @@
     el.themeToggleIcon = document.getElementById("theme-toggle-icon");
     el.btnSettingsNav = document.getElementById("btn-settings-nav");
     el.btnStatsNav = document.getElementById("btn-stats-nav");
-    el.btnLangToggle = document.getElementById("btn-lang-toggle");
-    el.langToggleLabel = document.getElementById("lang-toggle-label");
+    el.langSelect = document.getElementById("lang-select");
     el.btnAll = document.getElementById("btn-all");
     el.btnAllTitle = document.getElementById("scope-card-all-title");
     el.btnBookmarks = document.getElementById("btn-bookmarks");
@@ -428,7 +427,17 @@
       buildStatsScreen();
       showView("stats");
     });
-    el.btnLangToggle.addEventListener("click", cycleLanguage);
+    LANGUAGES.forEach(function (code) {
+      var option = document.createElement("option");
+      option.value = code;
+      option.textContent = LANGUAGE_LABEL[code];
+      el.langSelect.appendChild(option);
+    });
+    el.langSelect.addEventListener("change", function () {
+      setLanguage(el.langSelect.value);
+      // Hand the keyboard back, or the quiz shortcuts would go to the dropdown.
+      el.langSelect.blur();
+    });
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") {
         if (listeningForKey) {
@@ -669,8 +678,7 @@
   }
 
   function reflectLanguageToggle() {
-    el.btnLangToggle.setAttribute("aria-pressed", language !== "de" ? "true" : "false");
-    el.langToggleLabel.textContent = LANGUAGE_LABEL[language];
+    el.langSelect.value = language;
   }
 
   function applyStaticText() {
@@ -771,7 +779,11 @@
   }
 
   function cycleLanguage() {
-    language = LANGUAGES[(LANGUAGES.indexOf(language) + 1) % LANGUAGES.length];
+    setLanguage(LANGUAGES[(LANGUAGES.indexOf(language) + 1) % LANGUAGES.length]);
+  }
+
+  function setLanguage(code) {
+    language = code;
     saveLanguage(language);
     reflectLanguageToggle();
     reflectTheme();
@@ -1756,10 +1768,9 @@
   }
 
   function reflectKeybindingHints() {
-    el.btnLangToggle.setAttribute(
-      "title",
-      t("langToggleTitleBase") + " (" + displayKeyLabel(keybindings.toggleEnglish) + ")"
-    );
+    var langLabel = t("langSelectTitle") + " (" + displayKeyLabel(keybindings.toggleEnglish) + ")";
+    el.langSelect.setAttribute("title", langLabel);
+    el.langSelect.setAttribute("aria-label", langLabel);
     if (session && !session.finished) reflectBookmarkButton(session.questions[session.index].id);
     reflectAudioButton();
   }

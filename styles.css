@@ -185,10 +185,17 @@ button {
   .topbar-actions { gap: 4px; }
 }
 
-#btn-lang-toggle[aria-pressed="true"] {
-  background: var(--accent);
-  color: var(--accent-ink);
-  border-color: var(--accent);
+.lang-select {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-height: 36px;
+  padding: 0 4px;
+  cursor: pointer;
 }
 
 /* Urdu: Nastaliq where the device has it, otherwise the system Arabic-script font.
