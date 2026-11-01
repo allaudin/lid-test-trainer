@@ -9,6 +9,8 @@
   var STATS_KEY = "lid-stats-v1";
   var TOGGLE_KEY = "lid-show-english-v1"; // legacy on/off value, read once to migrate
   var LANGUAGE_KEY = "lid-language-v1";
+  var LANGUAGE_PAIR_KEY = "lid-language-pair-v1";
+  var DEFAULT_LANGUAGE_PAIR = ["de", "en"];
   var LANGUAGES = ["de", "en", "ur"];
   var LANGUAGE_LABEL = { de: "Deutsch", en: "English", ur: "اردو" };
   var LANGUAGE_LOCALE = { de: "de-DE", en: "en-GB", ur: "ur-PK" };
@@ -183,7 +185,10 @@
     btnFontReset: { de: "Zurücksetzen", en: "Reset", ur: "ری سیٹ کریں" },
     shortcutsNav: { de: "Tastenkürzel", en: "Keyboard shortcuts", ur: "کی بورڈ شارٹ کٹس" },
     shortcutsHeading: { de: "Tastenkürzel", en: "Keyboard shortcuts", ur: "کی بورڈ شارٹ کٹس" },
-    shortcutToggleEnglish: { de: "Sprache wechseln (Deutsch/Englisch/Urdu)", en: "Switch language (German/English/Urdu)", ur: "زبان تبدیل کریں (جرمن/انگریزی/اردو)" },
+    shortcutToggleEnglish: { de: "Zwischen zwei Sprachen wechseln", en: "Switch between two languages", ur: "دو زبانوں کے درمیان تبدیل کریں" },
+    languagePairLabel: { de: "Sprachen für dieses Kürzel", en: "Languages for this shortcut", ur: "اس شارٹ کٹ کی زبانیں" },
+    languagePairFirst: { de: "Erste Sprache", en: "First language", ur: "پہلی زبان" },
+    languagePairSecond: { de: "Zweite Sprache", en: "Second language", ur: "دوسری زبان" },
     shortcutOption1: { de: "Antwort 1 auswählen", en: "Select answer 1", ur: "جواب 1 منتخب کریں" },
     shortcutOption2: { de: "Antwort 2 auswählen", en: "Select answer 2", ur: "جواب 2 منتخب کریں" },
     shortcutOption3: { de: "Antwort 3 auswählen", en: "Select answer 3", ur: "جواب 3 منتخب کریں" },
@@ -230,6 +235,7 @@
   var CATEGORY_UR_BY_EN = {};
   var stats = loadStats();
   var language = loadLanguage();
+  var languagePair = loadLanguagePair();
   var theme = loadTheme();
   var fontScale = loadFontScale();
   var bookmarks = loadBookmarks();
@@ -477,7 +483,7 @@
 
       if (key === keybindings.toggleEnglish) {
         e.preventDefault();
-        cycleLanguage();
+        toggleLanguagePair();
         return;
       }
 
@@ -643,6 +649,8 @@
       showConfirm(t("resetShortcutsConfirm"), function () {
         keybindings = mergeKeybindings(null);
         saveKeybindings();
+        languagePair = normalizeLanguagePair(null);
+        saveLanguagePair();
         reflectKeybindingHints();
         el.shortcutsStatus.hidden = true;
         buildShortcutsScreen();
@@ -778,8 +786,9 @@
     openModal(message, false, onClose);
   }
 
-  function cycleLanguage() {
-    setLanguage(LANGUAGES[(LANGUAGES.indexOf(language) + 1) % LANGUAGES.length]);
+  // From a language outside the pair, this goes to the pair's first language.
+  function toggleLanguagePair() {
+    setLanguage(language === languagePair[0] ? languagePair[1] : languagePair[0]);
   }
 
   function setLanguage(code) {
@@ -1617,7 +1626,8 @@
       examState: examState,
       language: language,
       theme: theme,
-      keybindings: keybindings
+      keybindings: keybindings,
+      languagePair: languagePair
     };
   }
 
@@ -1731,6 +1741,7 @@
     }
     if (parsed.theme === "light" || parsed.theme === "dark" || parsed.theme === "system") theme = parsed.theme;
     if (parsed.keybindings && typeof parsed.keybindings === "object") keybindings = mergeKeybindings(parsed.keybindings);
+    if (parsed.languagePair) languagePair = normalizeLanguagePair(parsed.languagePair);
 
     saveStats();
     saveBookmarks();
@@ -1739,6 +1750,7 @@
     saveLanguage(language);
     saveTheme(theme);
     saveKeybindings();
+    saveLanguagePair();
 
     applyTheme();
     reflectTheme();
@@ -1814,7 +1826,51 @@
 
       row.appendChild(right);
       el.shortcutsList.appendChild(row);
+      if (action === "toggleEnglish") el.shortcutsList.appendChild(buildLanguagePairRow());
     });
+  }
+
+  function buildLanguagePairRow() {
+    var row = document.createElement("div");
+    row.className = "shortcut-row";
+
+    var label = document.createElement("span");
+    label.className = "shortcut-row-label";
+    label.textContent = t("languagePairLabel");
+    row.appendChild(label);
+
+    var right = document.createElement("div");
+    right.className = "shortcut-row-right";
+    right.appendChild(buildLanguagePairSelect(0, "languagePairFirst"));
+    var arrow = document.createElement("span");
+    arrow.setAttribute("aria-hidden", "true");
+    arrow.textContent = "↔";
+    right.appendChild(arrow);
+    right.appendChild(buildLanguagePairSelect(1, "languagePairSecond"));
+    row.appendChild(right);
+    return row;
+  }
+
+  function buildLanguagePairSelect(index, labelKey) {
+    var select = document.createElement("select");
+    select.className = "lang-select";
+    select.setAttribute("aria-label", t(labelKey));
+    LANGUAGES.forEach(function (code) {
+      var option = document.createElement("option");
+      option.value = code;
+      option.textContent = LANGUAGE_LABEL[code];
+      select.appendChild(option);
+    });
+    select.value = languagePair[index];
+    select.addEventListener("change", function () {
+      var other = 1 - index;
+      // Choosing the other side's language swaps them, so the two always differ.
+      if (select.value === languagePair[other]) languagePair[other] = languagePair[index];
+      languagePair[index] = select.value;
+      saveLanguagePair();
+      buildShortcutsScreen();
+    });
+    return select;
   }
 
   function mergeKeybindings(source) {
@@ -1944,6 +2000,23 @@
     try {
       window.localStorage.setItem(STATS_KEY, JSON.stringify(stats));
     } catch (e) { /* storage unavailable — fail silently */ }
+  }
+  function normalizeLanguagePair(pair) {
+    var valid = Array.isArray(pair) && pair.length === 2 && pair[0] !== pair[1] &&
+      LANGUAGES.indexOf(pair[0]) !== -1 && LANGUAGES.indexOf(pair[1]) !== -1;
+    return (valid ? pair : DEFAULT_LANGUAGE_PAIR).slice();
+  }
+  function loadLanguagePair() {
+    try {
+      return normalizeLanguagePair(JSON.parse(window.localStorage.getItem(LANGUAGE_PAIR_KEY)));
+    } catch (e) {
+      return normalizeLanguagePair(null);
+    }
+  }
+  function saveLanguagePair() {
+    try {
+      window.localStorage.setItem(LANGUAGE_PAIR_KEY, JSON.stringify(languagePair));
+    } catch (e) { /* ignore */ }
   }
   function loadLanguage() {
     try {

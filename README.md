@@ -33,13 +33,13 @@ python3 tools/generate_audio.py
 
 ## Language
 
-Choose German, English or Urdu from the dropdown at the top of the page, or press `L` to cycle through them.
+Choose German, English or Urdu from the dropdown at the top of the page. Press `L` to switch between two languages, German and English by default. To pick the two, open **Settings** (Einstellungen) and choose **Keyboard shortcuts** (Tastenkürzel).
 
 ## Keyboard shortcuts
 
 | Key | Action | Where it works |
 | --- | --- | --- |
-| `L` | Switch language (German, English, Urdu) | Anywhere |
+| `L` | Switch between your two chosen languages | Anywhere |
 | `1` `2` `3` `4` | Select answer 1 to 4 | During a quiz, before answering |
 | `Enter` | Advance to the next question | During a quiz, after answering |
 | `B` | Toggle bookmark | During a quiz |
