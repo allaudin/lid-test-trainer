@@ -7,7 +7,11 @@
   "use strict";
 
   var STATS_KEY = "lid-stats-v1";
-  var TOGGLE_KEY = "lid-show-english-v1";
+  var TOGGLE_KEY = "lid-show-english-v1"; // legacy on/off value, read once to migrate
+  var LANGUAGE_KEY = "lid-language-v1";
+  var LANGUAGES = ["de", "en", "ur"];
+  var LANGUAGE_LABEL = { de: "DE", en: "EN", ur: "اردو" };
+  var LANGUAGE_LOCALE = { de: "de-DE", en: "en-GB", ur: "ur-PK" };
   var THEME_KEY = "lid-theme-v1";
   var FONT_SCALE_KEY = "lid-font-scale-v1";
   var FONT_SCALE_MIN = 80;
@@ -48,146 +52,159 @@
   var THEME_CYCLE = ["system", "light", "dark"];
   var THEME_ICON = { system: "🖥", light: "☀", dark: "🌙" };
   var THEME_LABEL = {
-    system: { de: "System", en: "System" },
-    light: { de: "Hell", en: "Light" },
-    dark: { de: "Dunkel", en: "Dark" }
+    system: { de: "System", en: "System", ur: "سسٹم" },
+    light: { de: "Hell", en: "Light", ur: "ہلکی" },
+    dark: { de: "Dunkel", en: "Dark", ur: "گہری" }
   };
 
   var STRINGS = {
-    subtitle: { de: "Testtrainer", en: "Test Trainer" },
-    statsNav: { de: "Statistik", en: "Stats" },
-    enToggleTitleBase: { de: "Englische Übersetzung umschalten", en: "Toggle English translation" },
-    allQuestions: { de: "Alle Fragen", en: "All questions" },
-    byTopic: { de: "Nach Thema", en: "By topic" },
-    byState: { de: "Nach Bundesland", en: "By state" },
-    byStateSub: { de: "(Landeskunde)", en: "(regional knowledge)" },
-    back: { de: "Zurück", en: "Back" },
-    exit: { de: "Zurück", en: "Exit" },
-    next: { de: "Weiter", en: "Next" },
-    finish: { de: "Fertig", en: "Finish" },
-    question: { de: "Frage", en: "Question" },
-    of: { de: "von", en: "of" },
-    score: { de: "Punkte", en: "Score" },
-    correctSuffix: { de: "richtig", en: "correct" },
-    sessionComplete: { de: "Sitzung abgeschlossen", en: "Session complete" },
-    tryAgain: { de: "Nochmal versuchen", en: "Try again" },
-    viewStats: { de: "Statistik ansehen", en: "View stats" },
-    backToStart: { de: "Zurück zum Start", en: "Back to start" },
-    yourStats: { de: "Deine Statistik", en: "Your stats" },
-    overallAccuracy: { de: "Gesamtgenauigkeit", en: "Overall accuracy" },
-    questionsAttempted: { de: "Beantwortete Fragen", en: "Questions attempted" },
-    accuracyByCategory: { de: "Genauigkeit nach Kategorie", en: "Accuracy by category" },
-    reviewMissed: { de: "Falsch beantwortete Fragen üben", en: "Review missed questions" },
-    reviewMissedEmpty: { de: "Noch keine falschen Antworten — übe weiter, dann füllt sich das hier.", en: "No missed questions yet — keep practicing and this will fill in." },
-    reviewMissedHint: { de: "Sortiert nach den schwächsten und zuletzt falsch beantworteten Fragen.", en: "Ordered so your weakest and most recently missed questions come first." },
-    resetStats: { de: "Statistik zurücksetzen…", en: "Reset all stats…" },
-    resetConfirm: { de: "Gesamte gespeicherte Statistik zurücksetzen? Dies kann nicht rückgängig gemacht werden.", en: "Reset all saved stats? This cannot be undone." },
-    exitConfirm: { de: "Diese Sitzung verlassen? Dein Fortschritt in dieser Runde geht verloren.", en: "Leave this session? Your progress in this round will be lost." },
-    noQuestionsYet: { de: "Für diese Auswahl sind noch keine Fragen verfügbar.", en: "No questions available for this selection yet." },
-    notAttempted: { de: "nicht geübt", en: "not attempted" },
-    bookmarks: { de: "Lesezeichen", en: "Bookmarks" },
-    bookmarkOn: { de: "Lesezeichen setzen", en: "Add bookmark" },
-    bookmarkOff: { de: "Lesezeichen entfernen", en: "Remove bookmark" },
+    subtitle: { de: "Testtrainer", en: "Test Trainer", ur: "ٹیسٹ ٹرینر" },
+    statsNav: { de: "Statistik", en: "Stats", ur: "اعداد و شمار" },
+    langToggleTitleBase: { de: "Übersetzung umschalten", en: "Switch translation", ur: "ترجمہ تبدیل کریں" },
+    themeTitle: { de: "Design", en: "Theme", ur: "تھیم" },
+    themeTapToChange: { de: "zum Ändern tippen", en: "tap to change", ur: "تبدیل کرنے کے لیے کلک کریں" },
+    themeAria: { de: "Farbschema", en: "Color theme", ur: "رنگوں کی تھیم" },
+    allQuestions: { de: "Alle Fragen", en: "All questions", ur: "تمام سوالات" },
+    byTopic: { de: "Nach Thema", en: "By topic", ur: "موضوع کے لحاظ سے" },
+    byState: { de: "Nach Bundesland", en: "By state", ur: "ریاست کے لحاظ سے" },
+    byStateSub: { de: "(Landeskunde)", en: "(regional knowledge)", ur: "(علاقائی معلومات)" },
+    back: { de: "Zurück", en: "Back", ur: "واپس" },
+    exit: { de: "Zurück", en: "Exit", ur: "باہر نکلیں" },
+    next: { de: "Weiter", en: "Next", ur: "اگلا" },
+    finish: { de: "Fertig", en: "Finish", ur: "ختم کریں" },
+    question: { de: "Frage", en: "Question", ur: "سوال" },
+    of: { de: "von", en: "of", ur: "از" },
+    score: { de: "Punkte", en: "Score", ur: "اسکور" },
+    correctSuffix: { de: "richtig", en: "correct", ur: "درست" },
+    sessionComplete: { de: "Sitzung abgeschlossen", en: "Session complete", ur: "سیشن مکمل" },
+    tryAgain: { de: "Nochmal versuchen", en: "Try again", ur: "دوبارہ کوشش کریں" },
+    viewStats: { de: "Statistik ansehen", en: "View stats", ur: "اعداد و شمار دیکھیں" },
+    backToStart: { de: "Zurück zum Start", en: "Back to start", ur: "شروع پر واپس" },
+    yourStats: { de: "Deine Statistik", en: "Your stats", ur: "آپ کے اعداد و شمار" },
+    overallAccuracy: { de: "Gesamtgenauigkeit", en: "Overall accuracy", ur: "مجموعی درستگی" },
+    questionsAttempted: { de: "Beantwortete Fragen", en: "Questions attempted", ur: "حل کیے گئے سوالات" },
+    accuracyByCategory: { de: "Genauigkeit nach Kategorie", en: "Accuracy by category", ur: "زمرے کے لحاظ سے درستگی" },
+    reviewMissed: { de: "Falsch beantwortete Fragen üben", en: "Review missed questions", ur: "غلط جواب والے سوالات کی مشق کریں" },
+    reviewMissedEmpty: { de: "Noch keine falschen Antworten — übe weiter, dann füllt sich das hier.", en: "No missed questions yet — keep practicing and this will fill in.", ur: "ابھی کوئی غلط جواب نہیں — مشق جاری رکھیں، یہ فہرست بھر جائے گی۔" },
+    reviewMissedHint: { de: "Sortiert nach den schwächsten und zuletzt falsch beantworteten Fragen.", en: "Ordered so your weakest and most recently missed questions come first.", ur: "سب سے کمزور اور حال ہی میں غلط ہونے والے سوالات پہلے دکھائے جاتے ہیں۔" },
+    resetStats: { de: "Statistik zurücksetzen…", en: "Reset all stats…", ur: "تمام اعداد و شمار صاف کریں…" },
+    resetConfirm: { de: "Gesamte gespeicherte Statistik zurücksetzen? Dies kann nicht rückgängig gemacht werden.", en: "Reset all saved stats? This cannot be undone.", ur: "تمام محفوظ اعداد و شمار صاف کر دیں؟ یہ عمل واپس نہیں ہو سکتا۔" },
+    exitConfirm: { de: "Diese Sitzung verlassen? Dein Fortschritt in dieser Runde geht verloren.", en: "Leave this session? Your progress in this round will be lost.", ur: "یہ سیشن چھوڑ دیں؟ اس دور کی پیش رفت ضائع ہو جائے گی۔" },
+    noQuestionsYet: { de: "Für diese Auswahl sind noch keine Fragen verfügbar.", en: "No questions available for this selection yet.", ur: "اس انتخاب کے لیے ابھی کوئی سوال دستیاب نہیں۔" },
+    notAttempted: { de: "nicht geübt", en: "not attempted", ur: "مشق نہیں کی" },
+    bookmarks: { de: "Lesezeichen", en: "Bookmarks", ur: "بُک مارکس" },
+    bookmarkOn: { de: "Lesezeichen setzen", en: "Add bookmark", ur: "بُک مارک لگائیں" },
+    bookmarkOff: { de: "Lesezeichen entfernen", en: "Remove bookmark", ur: "بُک مارک ہٹائیں" },
     noBookmarksYet: {
       de: "Du hast noch keine Fragen mit einem Lesezeichen versehen. Tippe während einer Übung auf den Stern, um eine Frage zu markieren.",
-      en: "You haven't bookmarked any questions yet. Tap the star while practicing to mark one."
+      en: "You haven't bookmarked any questions yet. Tap the star while practicing to mark one.",
+      ur: "آپ نے ابھی کسی سوال پر بُک مارک نہیں لگایا۔ مشق کے دوران ستارے پر کلک کر کے سوال نشان زد کریں۔"
     },
     footer: {
       de: "Offline · Daten mit dem offiziellen BAMF-Einbürgerungstest abgeglichen (Stand 05.2025)",
-      en: "Offline · data cross-checked against the official BAMF Einbürgerungstest (05.2025)"
+      en: "Offline · data cross-checked against the official BAMF Einbürgerungstest (05.2025)",
+      ur: "آف لائن · ڈیٹا کا موازنہ سرکاری BAMF شہریت ٹیسٹ سے کیا گیا (05.2025)"
     },
-    examTitle: { de: "Prüfungssimulation", en: "Mock exam" },
-    examSubBefore: { de: "33 Fragen (30 allgemein + 3", en: "33 questions (30 general + 3" },
-    examSubAfter: { de: ") · 60 Minuten · 17 richtig zum Bestehen", en: ") · 60 minutes · 17 correct to pass" },
-    examStateLabel: { de: "Bundesland", en: "State" },
-    examHistoryBtn: { de: "Verlauf", en: "History" },
-    examHistoryHeading: { de: "Prüfungsverlauf", en: "Exam history" },
-    examHistoryEmpty: { de: "Noch keine Prüfungssimulation absolviert.", en: "No mock exams taken yet." },
-    clearExamHistory: { de: "Verlauf löschen…", en: "Clear history…" },
+    examTitle: { de: "Prüfungssimulation", en: "Mock exam", ur: "نمونہ امتحان" },
+    examSubBefore: { de: "33 Fragen (30 allgemein + 3", en: "33 questions (30 general + 3", ur: "33 سوالات (30 عام + 3" },
+    examSubAfter: { de: ") · 60 Minuten · 17 richtig zum Bestehen", en: ") · 60 minutes · 17 correct to pass", ur: ") · 60 منٹ · کامیابی کے لیے 17 درست جواب" },
+    examStateLabel: { de: "Bundesland", en: "State", ur: "ریاست" },
+    examHistoryBtn: { de: "Verlauf", en: "History", ur: "تاریخچہ" },
+    examHistoryHeading: { de: "Prüfungsverlauf", en: "Exam history", ur: "امتحانات کا تاریخچہ" },
+    examHistoryEmpty: { de: "Noch keine Prüfungssimulation absolviert.", en: "No mock exams taken yet.", ur: "ابھی کوئی نمونہ امتحان نہیں دیا گیا۔" },
+    clearExamHistory: { de: "Verlauf löschen…", en: "Clear history…", ur: "تاریخچہ صاف کریں…" },
     clearExamHistoryConfirm: {
       de: "Gesamten Prüfungsverlauf löschen? Dies kann nicht rückgängig gemacht werden.",
-      en: "Clear all exam history? This cannot be undone."
+      en: "Clear all exam history? This cannot be undone.",
+      ur: "امتحانات کا پورا تاریخچہ صاف کر دیں؟ یہ عمل واپس نہیں ہو سکتا۔"
     },
-    reviewAnswers: { de: "Antworten überprüfen", en: "Review answers" },
-    reviewHeading: { de: "Antworten überprüfen", en: "Review answers" },
-    examPass: { de: "Bestanden", en: "Passed" },
-    examFail: { de: "Nicht bestanden", en: "Not passed" },
+    reviewAnswers: { de: "Antworten überprüfen", en: "Review answers", ur: "جوابات کا جائزہ لیں" },
+    reviewHeading: { de: "Antworten überprüfen", en: "Review answers", ur: "جوابات کا جائزہ" },
+    examPass: { de: "Bestanden", en: "Passed", ur: "کامیاب" },
+    examFail: { de: "Nicht bestanden", en: "Not passed", ur: "ناکام" },
     examThresholdNote: {
       de: "Mindestens 17 von 33 richtig nötig zum Bestehen.",
-      en: "At least 17 of 33 correct required to pass."
+      en: "At least 17 of 33 correct required to pass.",
+      ur: "کامیابی کے لیے 33 میں سے کم از کم 17 درست جواب ضروری ہیں۔"
     },
-    reviewCorrect: { de: "Richtig", en: "Correct" },
-    reviewWrong: { de: "Falsch", en: "Wrong" },
-    reviewUnanswered: { de: "Nicht beantwortet", en: "Not answered" },
-    explanationLabel: { de: "Warum ist das richtig?", en: "Why is this correct?" },
-    modalOk: { de: "OK", en: "OK" },
-    modalCancel: { de: "Abbrechen", en: "Cancel" },
-    dataNav: { de: "Daten sichern & wiederherstellen", en: "Backup & restore data" },
-    dataHeading: { de: "Daten sichern & wiederherstellen", en: "Backup & restore data" },
-    dataExportHeading: { de: "Exportieren", en: "Export" },
+    reviewCorrect: { de: "Richtig", en: "Correct", ur: "درست" },
+    reviewWrong: { de: "Falsch", en: "Wrong", ur: "غلط" },
+    reviewUnanswered: { de: "Nicht beantwortet", en: "Not answered", ur: "جواب نہیں دیا" },
+    explanationLabel: { de: "Warum ist das richtig?", en: "Why is this correct?", ur: "یہ کیوں درست ہے؟" },
+    modalOk: { de: "OK", en: "OK", ur: "ٹھیک ہے" },
+    modalCancel: { de: "Abbrechen", en: "Cancel", ur: "منسوخ کریں" },
+    dataNav: { de: "Daten sichern & wiederherstellen", en: "Backup & restore data", ur: "ڈیٹا کا بیک اپ اور بحالی" },
+    dataHeading: { de: "Daten sichern & wiederherstellen", en: "Backup & restore data", ur: "ڈیٹا کا بیک اپ اور بحالی" },
+    dataExportHeading: { de: "Exportieren", en: "Export", ur: "ایکسپورٹ" },
     dataExportHint: {
       de: "Speichert eine Datei mit deiner Statistik, deinen Lesezeichen und deinem Prüfungsverlauf.",
-      en: "Saves a file with your stats, bookmarks, and exam history."
+      en: "Saves a file with your stats, bookmarks, and exam history.",
+      ur: "آپ کے اعداد و شمار، بُک مارکس اور امتحانات کے تاریخچے کی فائل محفوظ کرتا ہے۔"
     },
-    btnExportDownload: { de: "Datei herunterladen", en: "Download file" },
-    btnCopyExport: { de: "In Zwischenablage kopieren", en: "Copy to clipboard" },
+    btnExportDownload: { de: "Datei herunterladen", en: "Download file", ur: "فائل ڈاؤن لوڈ کریں" },
+    btnCopyExport: { de: "In Zwischenablage kopieren", en: "Copy to clipboard", ur: "کلپ بورڈ پر کاپی کریں" },
     dataExportFallbackHint: {
       de: "Falls beides nicht funktioniert, markiere den Text unten und kopiere ihn von Hand.",
-      en: "If neither works, select the text below and copy it manually."
+      en: "If neither works, select the text below and copy it manually.",
+      ur: "اگر دونوں کام نہ کریں تو نیچے دیا گیا متن منتخب کر کے خود کاپی کریں۔"
     },
-    copySuccess: { de: "In die Zwischenablage kopiert.", en: "Copied to clipboard." },
-    copyError: { de: "Kopieren nicht möglich — bitte den Text unten markieren und kopieren.", en: "Couldn't copy automatically — please select and copy the text below." },
-    downloadSuccess: { de: "Datei gespeichert.", en: "File saved." },
-    downloadDeclined: { de: "Download abgelehnt.", en: "Download declined." },
-    downloadRateLimited: { de: "Bitte kurz warten und erneut versuchen.", en: "Please wait a moment and try again." },
+    copySuccess: { de: "In die Zwischenablage kopiert.", en: "Copied to clipboard.", ur: "کلپ بورڈ پر کاپی ہو گیا۔" },
+    copyError: { de: "Kopieren nicht möglich — bitte den Text unten markieren und kopieren.", en: "Couldn't copy automatically — please select and copy the text below.", ur: "خودکار کاپی نہیں ہو سکی — براہِ کرم نیچے دیا گیا متن منتخب کر کے کاپی کریں۔" },
+    downloadSuccess: { de: "Datei gespeichert.", en: "File saved.", ur: "فائل محفوظ ہو گئی۔" },
+    downloadDeclined: { de: "Download abgelehnt.", en: "Download declined.", ur: "ڈاؤن لوڈ مسترد کر دیا گیا۔" },
+    downloadRateLimited: { de: "Bitte kurz warten und erneut versuchen.", en: "Please wait a moment and try again.", ur: "براہِ کرم تھوڑی دیر بعد دوبارہ کوشش کریں۔" },
     downloadUnavailable: {
       de: "Download in dieser Ansicht nicht verfügbar — nutze stattdessen „Kopieren“.",
-      en: "Download isn't available in this view — use \"Copy\" instead."
+      en: "Download isn't available in this view — use \"Copy\" instead.",
+      ur: "اس منظر میں ڈاؤن لوڈ دستیاب نہیں — اس کے بجائے \"کاپی\" استعمال کریں۔"
     },
-    dataImportHeading: { de: "Importieren", en: "Import" },
+    dataImportHeading: { de: "Importieren", en: "Import", ur: "امپورٹ" },
     dataImportHint: {
       de: "Wähle eine zuvor exportierte Datei aus. Deine aktuellen Daten auf diesem Gerät werden dabei überschrieben.",
-      en: "Choose a previously exported file. Your current data on this device will be overwritten."
+      en: "Choose a previously exported file. Your current data on this device will be overwritten.",
+      ur: "پہلے سے ایکسپورٹ کی گئی فائل منتخب کریں۔ اس ڈیوائس پر موجود آپ کا موجودہ ڈیٹا تبدیل ہو جائے گا۔"
     },
-    btnImportFile: { de: "Datei auswählen…", en: "Choose file…" },
-    dataImportPasteHint: { de: "Oder JSON hier einfügen:", en: "Or paste JSON here:" },
-    btnImportApply: { de: "Importieren", en: "Import" },
+    btnImportFile: { de: "Datei auswählen…", en: "Choose file…", ur: "فائل منتخب کریں…" },
+    dataImportPasteHint: { de: "Oder JSON hier einfügen:", en: "Or paste JSON here:", ur: "یا JSON یہاں پیسٹ کریں:" },
+    btnImportApply: { de: "Importieren", en: "Import", ur: "امپورٹ کریں" },
     importConfirm: {
       de: "Deine aktuellen Daten auf diesem Gerät werden durch die importierten Daten ersetzt. Fortfahren?",
-      en: "Your current data on this device will be replaced by the imported data. Continue?"
+      en: "Your current data on this device will be replaced by the imported data. Continue?",
+      ur: "اس ڈیوائس پر موجود آپ کا موجودہ ڈیٹا امپورٹ کیے گئے ڈیٹا سے بدل دیا جائے گا۔ جاری رکھیں؟"
     },
-    importSuccess: { de: "Import erfolgreich.", en: "Import successful." },
-    importErrorParse: { de: "Ungültiges JSON — die Datei konnte nicht gelesen werden.", en: "Invalid JSON — the file could not be read." },
-    importErrorFormat: { de: "Diese Datei enthält keine erkennbaren App-Daten.", en: "This file doesn't contain recognizable app data." },
-    settingsNav: { de: "Einstellungen", en: "Settings" },
-    settingsHeading: { de: "Einstellungen", en: "Settings" },
-    fontSizeHeading: { de: "Textgröße", en: "Text size" },
-    btnFontDecreaseAria: { de: "Textgröße verkleinern", en: "Decrease text size" },
-    btnFontIncreaseAria: { de: "Textgröße vergrößern", en: "Increase text size" },
-    btnFontReset: { de: "Zurücksetzen", en: "Reset" },
-    shortcutsNav: { de: "Tastenkürzel", en: "Keyboard shortcuts" },
-    shortcutsHeading: { de: "Tastenkürzel", en: "Keyboard shortcuts" },
-    shortcutToggleEnglish: { de: "Sprache umschalten (Deutsch/Englisch)", en: "Toggle language (German/English)" },
-    shortcutOption1: { de: "Antwort 1 auswählen", en: "Select answer 1" },
-    shortcutOption2: { de: "Antwort 2 auswählen", en: "Select answer 2" },
-    shortcutOption3: { de: "Antwort 3 auswählen", en: "Select answer 3" },
-    shortcutOption4: { de: "Antwort 4 auswählen", en: "Select answer 4" },
-    shortcutNext: { de: "Weiter zur nächsten Frage", en: "Advance to the next question" },
-    shortcutBookmark: { de: "Lesezeichen umschalten", en: "Toggle bookmark" },
-    shortcutAudio: { de: "Deutsche Audiowiedergabe starten/stoppen", en: "Play/stop German audio" },
-    audioPlay: { de: "Auf Deutsch vorlesen", en: "Read aloud in German" },
-    audioStop: { de: "Wiedergabe stoppen", en: "Stop audio" },
-    btnChangeShortcut: { de: "Ändern", en: "Change" },
-    btnCancelListening: { de: "Abbrechen", en: "Cancel" },
-    pressAKey: { de: "Taste drücken… (Esc zum Abbrechen)", en: "Press a key… (Esc to cancel)" },
-    shortcutConflictPrefix: { de: "Diese Taste wird bereits verwendet für: ", en: "This key is already used for: " },
-    btnResetShortcuts: { de: "Auf Standard zurücksetzen…", en: "Reset to defaults…" },
+    importSuccess: { de: "Import erfolgreich.", en: "Import successful.", ur: "امپورٹ کامیاب رہا۔" },
+    importErrorParse: { de: "Ungültiges JSON — die Datei konnte nicht gelesen werden.", en: "Invalid JSON — the file could not be read.", ur: "غلط JSON — فائل پڑھی نہیں جا سکی۔" },
+    importErrorFormat: { de: "Diese Datei enthält keine erkennbaren App-Daten.", en: "This file doesn't contain recognizable app data.", ur: "اس فائل میں ایپ کا قابلِ شناخت ڈیٹا موجود نہیں۔" },
+    settingsNav: { de: "Einstellungen", en: "Settings", ur: "ترتیبات" },
+    settingsHeading: { de: "Einstellungen", en: "Settings", ur: "ترتیبات" },
+    fontSizeHeading: { de: "Textgröße", en: "Text size", ur: "متن کا سائز" },
+    btnFontDecreaseAria: { de: "Textgröße verkleinern", en: "Decrease text size", ur: "متن چھوٹا کریں" },
+    btnFontIncreaseAria: { de: "Textgröße vergrößern", en: "Increase text size", ur: "متن بڑا کریں" },
+    btnFontReset: { de: "Zurücksetzen", en: "Reset", ur: "ری سیٹ کریں" },
+    shortcutsNav: { de: "Tastenkürzel", en: "Keyboard shortcuts", ur: "کی بورڈ شارٹ کٹس" },
+    shortcutsHeading: { de: "Tastenkürzel", en: "Keyboard shortcuts", ur: "کی بورڈ شارٹ کٹس" },
+    shortcutToggleEnglish: { de: "Sprache wechseln (Deutsch/Englisch/Urdu)", en: "Switch language (German/English/Urdu)", ur: "زبان تبدیل کریں (جرمن/انگریزی/اردو)" },
+    shortcutOption1: { de: "Antwort 1 auswählen", en: "Select answer 1", ur: "جواب 1 منتخب کریں" },
+    shortcutOption2: { de: "Antwort 2 auswählen", en: "Select answer 2", ur: "جواب 2 منتخب کریں" },
+    shortcutOption3: { de: "Antwort 3 auswählen", en: "Select answer 3", ur: "جواب 3 منتخب کریں" },
+    shortcutOption4: { de: "Antwort 4 auswählen", en: "Select answer 4", ur: "جواب 4 منتخب کریں" },
+    shortcutNext: { de: "Weiter zur nächsten Frage", en: "Advance to the next question", ur: "اگلے سوال پر جائیں" },
+    shortcutBookmark: { de: "Lesezeichen umschalten", en: "Toggle bookmark", ur: "بُک مارک لگائیں/ہٹائیں" },
+    shortcutAudio: { de: "Deutsche Audiowiedergabe starten/stoppen", en: "Play/stop German audio", ur: "جرمن آڈیو چلائیں/روکیں" },
+    audioPlay: { de: "Auf Deutsch vorlesen", en: "Read aloud in German", ur: "جرمن میں سنیں" },
+    audioStop: { de: "Wiedergabe stoppen", en: "Stop audio", ur: "آڈیو روکیں" },
+    btnChangeShortcut: { de: "Ändern", en: "Change", ur: "تبدیل کریں" },
+    btnCancelListening: { de: "Abbrechen", en: "Cancel", ur: "منسوخ کریں" },
+    pressAKey: { de: "Taste drücken… (Esc zum Abbrechen)", en: "Press a key… (Esc to cancel)", ur: "کوئی کلید دبائیں… (منسوخ کرنے کے لیے Esc)" },
+    shortcutConflictPrefix: { de: "Diese Taste wird bereits verwendet für: ", en: "This key is already used for: ", ur: "یہ کلید پہلے سے اس کے لیے استعمال ہو رہی ہے: " },
+    btnResetShortcuts: { de: "Auf Standard zurücksetzen…", en: "Reset to defaults…", ur: "ڈیفالٹ پر واپس لائیں…" },
     resetShortcutsConfirm: {
       de: "Alle Tastenkürzel auf die Standardwerte zurücksetzen?",
-      en: "Reset all keyboard shortcuts to their defaults?"
+      en: "Reset all keyboard shortcuts to their defaults?",
+      ur: "تمام کی بورڈ شارٹ کٹس ڈیفالٹ پر واپس لے آئیں؟"
     }
   };
-  function t(key) { return STRINGS[key][showEnglish ? "en" : "de"]; }
+  function t(key) { return STRINGS[key][language]; }
 
   var GENERAL_ORDER = [
     "Law", "Society and Family", "State", "Politics", "Economy",
@@ -210,8 +227,9 @@
   var DATA = [];
   var DATA_BY_ID = {};
   var CATEGORY_DE_BY_EN = {};
+  var CATEGORY_UR_BY_EN = {};
   var stats = loadStats();
-  var showEnglish = loadToggle();
+  var language = loadLanguage();
   var theme = loadTheme();
   var fontScale = loadFontScale();
   var bookmarks = loadBookmarks();
@@ -247,6 +265,7 @@
         DATA.forEach(function (d) {
           DATA_BY_ID[d.id] = d;
           CATEGORY_DE_BY_EN[d.category_en] = d.category_de;
+          CATEGORY_UR_BY_EN[d.category_en] = d.category_ur;
         });
         populateExamStateSelect();
         buildStartScreen();
@@ -269,8 +288,8 @@
     el.themeToggleIcon = document.getElementById("theme-toggle-icon");
     el.btnSettingsNav = document.getElementById("btn-settings-nav");
     el.btnStatsNav = document.getElementById("btn-stats-nav");
-    el.btnEnToggle = document.getElementById("btn-en-toggle");
-    el.enToggleState = document.getElementById("en-toggle-state");
+    el.btnLangToggle = document.getElementById("btn-lang-toggle");
+    el.langToggleLabel = document.getElementById("lang-toggle-label");
     el.btnAll = document.getElementById("btn-all");
     el.btnAllTitle = document.getElementById("scope-card-all-title");
     el.btnBookmarks = document.getElementById("btn-bookmarks");
@@ -409,7 +428,7 @@
       buildStatsScreen();
       showView("stats");
     });
-    el.btnEnToggle.addEventListener("click", toggleEnglish);
+    el.btnLangToggle.addEventListener("click", cycleLanguage);
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") {
         if (listeningForKey) {
@@ -449,7 +468,7 @@
 
       if (key === keybindings.toggleEnglish) {
         e.preventDefault();
-        toggleEnglish();
+        cycleLanguage();
         return;
       }
 
@@ -642,20 +661,20 @@
       attemptImport(el.dataImportText.value);
     });
 
-    reflectEnglishToggle();
+    reflectLanguageToggle();
     reflectTheme();
     applyFontScale();
     reflectFontScale();
     applyStaticText();
   }
 
-  function reflectEnglishToggle() {
-    el.btnEnToggle.setAttribute("aria-pressed", showEnglish ? "true" : "false");
-    el.enToggleState.textContent = showEnglish ? "●" : "○";
+  function reflectLanguageToggle() {
+    el.btnLangToggle.setAttribute("aria-pressed", language !== "de" ? "true" : "false");
+    el.langToggleLabel.textContent = LANGUAGE_LABEL[language];
   }
 
   function applyStaticText() {
-    document.documentElement.lang = showEnglish ? "en" : "de";
+    document.documentElement.lang = language;
     el.topbarSubtitle.textContent = t("subtitle");
     el.btnStatsNav.textContent = t("statsNav");
     reflectKeybindingHints();
@@ -751,10 +770,10 @@
     openModal(message, false, onClose);
   }
 
-  function toggleEnglish() {
-    showEnglish = !showEnglish;
-    saveToggle(showEnglish);
-    reflectEnglishToggle();
+  function cycleLanguage() {
+    language = LANGUAGES[(LANGUAGES.indexOf(language) + 1) % LANGUAGES.length];
+    saveLanguage(language);
+    reflectLanguageToggle();
     reflectTheme();
     applyStaticText();
     if (DATA.length) buildStartScreen();
@@ -780,15 +799,10 @@
   }
 
   function reflectTheme() {
-    var label = THEME_LABEL[theme][showEnglish ? "en" : "de"];
+    var label = THEME_LABEL[theme][language];
     el.themeToggleIcon.textContent = THEME_ICON[theme];
-    if (showEnglish) {
-      el.btnThemeToggle.setAttribute("title", "Theme: " + label + " (tap to change)");
-      el.btnThemeToggle.setAttribute("aria-label", "Color theme: " + label + ". Tap to change.");
-    } else {
-      el.btnThemeToggle.setAttribute("title", "Design: " + label + " (zum Ändern tippen)");
-      el.btnThemeToggle.setAttribute("aria-label", "Farbschema: " + label + ". Zum Ändern tippen.");
-    }
+    el.btnThemeToggle.setAttribute("title", t("themeTitle") + ": " + label + " (" + t("themeTapToChange") + ")");
+    el.btnThemeToggle.setAttribute("aria-label", t("themeAria") + ": " + label + " (" + t("themeTapToChange") + ")");
   }
 
   function applyFontScale() {
@@ -975,6 +989,26 @@
     el.btnAudio.setAttribute("aria-label", label);
   }
 
+  // ---------- Translations ----------
+  // Translated value of a question field such as "question", or "" in German mode.
+  function translated(q, field) {
+    return language === "de" ? "" : (q[field + "_" + language] || "");
+  }
+
+  function answerTranslation(ans) {
+    var text = language === "de" ? "" : ans["text_" + language];
+    return text && text !== ans.text_de ? text : "";
+  }
+
+  function categoryTranslation(nameEn) {
+    if (language === "ur") return CATEGORY_UR_BY_EN[nameEn] || nameEn;
+    return language === "en" ? nameEn : "";
+  }
+
+  function stateDisplayName(stateEn) {
+    return categoryTranslation(stateEn) || CATEGORY_DE_BY_EN[stateEn] || stateEn;
+  }
+
   // ---------- Exam state select ----------
   function populateExamStateSelect() {
     if (!STATE_ORDER.some(function (s) { return CATEGORY_DE_BY_EN[s]; })) return;
@@ -983,7 +1017,7 @@
     STATE_ORDER.forEach(function (stateEn) {
       var opt = document.createElement("option");
       opt.value = stateEn;
-      opt.textContent = showEnglish ? stateEn : (CATEGORY_DE_BY_EN[stateEn] || stateEn);
+      opt.textContent = stateDisplayName(stateEn);
       el.examStateSelect.appendChild(opt);
     });
     el.examStateSelect.value = current;
@@ -998,7 +1032,7 @@
 
   function updateExamSub() {
     if (!el.examSubEl) return;
-    var stateName = showEnglish ? examState : (CATEGORY_DE_BY_EN[examState] || examState);
+    var stateName = stateDisplayName(examState);
     el.examSubEl.textContent = t("examSubBefore") + " " + stateName + t("examSubAfter");
   }
 
@@ -1061,10 +1095,11 @@
     nameSpan.className = "scope-item-name";
     nameSpan.textContent = nameDe;
     nameWrap.appendChild(nameSpan);
-    if (showEnglish && nameEn !== nameDe) {
+    var nameTranslated = categoryTranslation(nameEn);
+    if (nameTranslated && nameTranslated !== nameDe) {
       var nameEnSpan = document.createElement("span");
       nameEnSpan.className = "scope-item-name-en";
-      nameEnSpan.textContent = nameEn;
+      nameEnSpan.textContent = nameTranslated;
       nameWrap.appendChild(nameEnSpan);
     }
     btn.appendChild(nameWrap);
@@ -1163,7 +1198,7 @@
       el.quizTimer.hidden = true;
       el.quizScore.textContent = t("score") + ": " + session.score + "/" + session.index;
     }
-    el.quizCategory.textContent = q.category_de + (showEnglish ? " · " + q.category_en : "");
+    el.quizCategory.textContent = q.category_de + (language !== "de" ? " · " + categoryTranslation(q.category_en) : "");
     reflectBookmarkButton(q.id);
 
     if (q.img && q.img.url) {
@@ -1183,9 +1218,9 @@
     }
 
     el.quizQuestionDe.textContent = q.question_de;
-    if (showEnglish) {
+    if (language !== "de") {
       el.quizQuestionEn.hidden = false;
-      el.quizQuestionEn.textContent = q.question_en;
+      el.quizQuestionEn.textContent = translated(q, "question");
     } else {
       el.quizQuestionEn.hidden = true;
     }
@@ -1197,6 +1232,7 @@
         origIndex: origIndex,
         text_de: q.answers_de[origIndex],
         text_en: q.answers_en[origIndex],
+        text_ur: q.answers_ur ? q.answers_ur[origIndex] : "",
         isCorrect: origIndex === q.correct
       };
     });
@@ -1220,10 +1256,11 @@
       deLine.textContent = ans.text_de;
       textWrap.appendChild(deLine);
 
-      if (showEnglish && ans.text_en && ans.text_en !== ans.text_de) {
+      var answerText = answerTranslation(ans);
+      if (answerText) {
         var enLine = document.createElement("div");
         enLine.className = "answer-text-en";
-        enLine.textContent = ans.text_en;
+        enLine.textContent = answerText;
         textWrap.appendChild(enLine);
       }
       btn.appendChild(textWrap);
@@ -1242,12 +1279,12 @@
   function refreshQuestionLanguage() {
     var q = session.questions[session.index];
 
-    el.quizCategory.textContent = q.category_de + (showEnglish ? " · " + q.category_en : "");
+    el.quizCategory.textContent = q.category_de + (language !== "de" ? " · " + categoryTranslation(q.category_en) : "");
     if (q.img && q.img.url) el.quizImage.alt = q.question_en || q.question_de;
 
-    if (showEnglish) {
+    if (language !== "de") {
       el.quizQuestionEn.hidden = false;
-      el.quizQuestionEn.textContent = q.question_en;
+      el.quizQuestionEn.textContent = translated(q, "question");
     } else {
       el.quizQuestionEn.hidden = true;
     }
@@ -1257,22 +1294,23 @@
       var ans = session.shuffledAnswers[i];
       var textWrap = b.querySelector(".answer-text-wrap");
       var enLine = b.querySelector(".answer-text-en");
-      if (showEnglish && ans.text_en && ans.text_en !== ans.text_de) {
+      var answerText = answerTranslation(ans);
+      if (answerText) {
         if (!enLine) {
           enLine = document.createElement("div");
           enLine.className = "answer-text-en";
           textWrap.appendChild(enLine);
         }
-        enLine.textContent = ans.text_en;
+        enLine.textContent = answerText;
       } else if (enLine) {
         enLine.remove();
       }
     });
 
     if (!session.isExam && q.explanation_de && !el.quizExplanation.hidden) {
-      if (showEnglish && q.explanation_en) {
+      if (translated(q, "explanation")) {
         el.quizExplanationEn.hidden = false;
-        el.quizExplanationEn.textContent = q.explanation_en;
+        el.quizExplanationEn.textContent = translated(q, "explanation");
       } else {
         el.quizExplanationEn.hidden = true;
       }
@@ -1328,9 +1366,9 @@
       if (q.explanation_de) {
         el.quizExplanation.hidden = false;
         el.quizExplanationDe.textContent = q.explanation_de;
-        if (showEnglish && q.explanation_en) {
+        if (translated(q, "explanation")) {
           el.quizExplanationEn.hidden = false;
-          el.quizExplanationEn.textContent = q.explanation_en;
+          el.quizExplanationEn.textContent = translated(q, "explanation");
         } else {
           el.quizExplanationEn.hidden = true;
         }
@@ -1458,10 +1496,10 @@
       question.className = "review-item-question";
       question.textContent = q.question_de;
       item.appendChild(question);
-      if (showEnglish) {
+      if (language !== "de") {
         var questionEn = document.createElement("p");
         questionEn.className = "review-item-question-en";
-        questionEn.textContent = q.question_en;
+        questionEn.textContent = translated(q, "question");
         item.appendChild(questionEn);
       }
 
@@ -1472,11 +1510,14 @@
         row.className = "review-item-answer";
         if (origIdx === q.correct) row.classList.add("is-correct-answer");
         if (ans && !ans.isCorrect && origIdx === ans.chosenOrigIndex) row.classList.add("is-wrong-chosen");
-        var rowText = text;
-        if (showEnglish && q.answers_en[origIdx] && q.answers_en[origIdx] !== text) {
-          rowText += " — " + q.answers_en[origIdx];
+        row.textContent = text;
+        var rowTranslation = language === "de" ? "" : (q["answers_" + language] || [])[origIdx];
+        if (rowTranslation && rowTranslation !== text) {
+          var rowLine = document.createElement("div");
+          rowLine.className = "review-item-answer-translation";
+          rowLine.textContent = rowTranslation;
+          row.appendChild(rowLine);
         }
-        row.textContent = rowText;
         answersWrap.appendChild(row);
       });
       item.appendChild(answersWrap);
@@ -1492,10 +1533,10 @@
         explDe.textContent = q.explanation_de;
         expl.appendChild(explLabel);
         expl.appendChild(explDe);
-        if (showEnglish && q.explanation_en) {
+        if (translated(q, "explanation")) {
           var explEn = document.createElement("p");
           explEn.className = "review-item-explanation-text-en";
-          explEn.textContent = q.explanation_en;
+          explEn.textContent = translated(q, "explanation");
           expl.appendChild(explEn);
         }
         item.appendChild(expl);
@@ -1508,7 +1549,7 @@
   // ---------- Exam history screen ----------
   function buildExamHistoryScreen() {
     el.examHistoryList.innerHTML = "";
-    var locale = showEnglish ? "en-GB" : "de-DE";
+    var locale = LANGUAGE_LOCALE[language];
 
     if (examHistory.length === 0) {
       el.examHistoryEmpty.hidden = false;
@@ -1530,7 +1571,7 @@
       dateEl.textContent = new Date(entry.date).toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" });
       var metaEl = document.createElement("div");
       metaEl.className = "exam-history-item-meta";
-      var stateName = showEnglish ? entry.stateEn : (CATEGORY_DE_BY_EN[entry.stateEn] || entry.stateEn);
+      var stateName = stateDisplayName(entry.stateEn);
       metaEl.textContent = stateName;
       info.appendChild(dateEl);
       info.appendChild(metaEl);
@@ -1562,7 +1603,7 @@
       bookmarks: bookmarks,
       examHistory: examHistory,
       examState: examState,
-      showEnglish: showEnglish,
+      language: language,
       theme: theme,
       keybindings: keybindings
     };
@@ -1671,7 +1712,11 @@
     if (parsed.bookmarks && typeof parsed.bookmarks === "object") bookmarks = parsed.bookmarks;
     if (Array.isArray(parsed.examHistory)) examHistory = parsed.examHistory;
     if (typeof parsed.examState === "string") examState = parsed.examState;
-    if (typeof parsed.showEnglish === "boolean") showEnglish = parsed.showEnglish;
+    if (LANGUAGES.indexOf(parsed.language) !== -1) {
+      language = parsed.language;
+    } else if (typeof parsed.showEnglish === "boolean") {
+      language = parsed.showEnglish ? "en" : "de"; // backups from before Urdu was added
+    }
     if (parsed.theme === "light" || parsed.theme === "dark" || parsed.theme === "system") theme = parsed.theme;
     if (parsed.keybindings && typeof parsed.keybindings === "object") keybindings = mergeKeybindings(parsed.keybindings);
 
@@ -1679,13 +1724,13 @@
     saveBookmarks();
     saveExamHistory();
     saveExamState(examState);
-    saveToggle(showEnglish);
+    saveLanguage(language);
     saveTheme(theme);
     saveKeybindings();
 
     applyTheme();
     reflectTheme();
-    reflectEnglishToggle();
+    reflectLanguageToggle();
     reflectKeybindingHints();
     applyStaticText();
     if (DATA.length) buildStartScreen();
@@ -1711,9 +1756,9 @@
   }
 
   function reflectKeybindingHints() {
-    el.btnEnToggle.setAttribute(
+    el.btnLangToggle.setAttribute(
       "title",
-      t("enToggleTitleBase") + " (" + displayKeyLabel(keybindings.toggleEnglish) + ")"
+      t("langToggleTitleBase") + " (" + displayKeyLabel(keybindings.toggleEnglish) + ")"
     );
     if (session && !session.finished) reflectBookmarkButton(session.questions[session.index].id);
     reflectAudioButton();
@@ -1889,16 +1934,18 @@
       window.localStorage.setItem(STATS_KEY, JSON.stringify(stats));
     } catch (e) { /* storage unavailable — fail silently */ }
   }
-  function loadToggle() {
+  function loadLanguage() {
     try {
-      return window.localStorage.getItem(TOGGLE_KEY) === "true";
+      var stored = window.localStorage.getItem(LANGUAGE_KEY);
+      if (LANGUAGES.indexOf(stored) !== -1) return stored;
+      return window.localStorage.getItem(TOGGLE_KEY) === "true" ? "en" : "de";
     } catch (e) {
-      return false;
+      return "de";
     }
   }
-  function saveToggle(val) {
+  function saveLanguage(val) {
     try {
-      window.localStorage.setItem(TOGGLE_KEY, val ? "true" : "false");
+      window.localStorage.setItem(LANGUAGE_KEY, val);
     } catch (e) { /* ignore */ }
   }
   function loadTheme() {

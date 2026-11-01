@@ -1,6 +1,6 @@
 # Leben in Deutschland Test Trainer
 
-A bilingual (German/English) practice trainer for the Leben in Deutschland citizenship test. It is a static web app with no dependencies and no build step.
+A practice trainer for the Leben in Deutschland citizenship test, with German questions and English and Urdu translations. It is a static web app with no dependencies and no build step.
 
 ## Running it
 
@@ -35,7 +35,7 @@ python3 tools/generate_audio.py
 
 | Key | Action | Where it works |
 | --- | --- | --- |
-| `L` | Toggle language (German/English) | Anywhere |
+| `L` | Switch language (German, English, Urdu) | Anywhere |
 | `1` `2` `3` `4` | Select answer 1 to 4 | During a quiz, before answering |
 | `Enter` | Advance to the next question | During a quiz, after answering |
 | `B` | Toggle bookmark | During a quiz |

@@ -185,12 +185,31 @@ button {
   .topbar-actions { gap: 4px; }
 }
 
-#btn-en-toggle[aria-pressed="true"] {
+#btn-lang-toggle[aria-pressed="true"] {
   background: var(--accent);
   color: var(--accent-ink);
   border-color: var(--accent);
 }
-.toggle-dot { font-size: 10px; }
+
+/* Urdu: Nastaliq where the device has it, otherwise the system Arabic-script font.
+   The unicode-range keeps German and numbers in the normal font. */
+@font-face {
+  font-family: "Urdu Nastaliq";
+  src: local("Noto Nastaliq Urdu"), local("Jameel Noori Nastaleeq"), local("Urdu Typesetting");
+  unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFF;
+}
+html[lang="ur"] body { font-family: "Urdu Nastaliq", system-ui, -apple-system, "Segoe UI", sans-serif; }
+/* The layout stays left-to-right; each block of text takes its direction from its
+   content, so Urdu aligns right while the German beside it stays left. */
+html[lang="ur"] body *:not(span) { unicode-bidi: plaintext; }
+html[lang="ur"] .answer-text-en { text-align: start; }
+html[lang="ur"] .quiz-question-en,
+html[lang="ur"] .answer-text-en,
+html[lang="ur"] .quiz-explanation-text-en,
+html[lang="ur"] .review-item-question-en,
+html[lang="ur"] .review-item-answer-translation,
+html[lang="ur"] .review-item-explanation-text-en,
+html[lang="ur"] .scope-item-name-en { line-height: 2; }
 
 /* ---------- Main / views ---------- */
 main { flex: 1; padding: 16px; padding-bottom: max(32px, env(safe-area-inset-bottom)); }
