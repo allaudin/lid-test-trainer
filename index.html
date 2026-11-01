@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<title>Leben in Deutschland — Test Trainer</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ctext%20y%3D%22.9em%22%20font-size%3D%2290%22%3E%F0%9F%87%A9%F0%9F%87%AA%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+<script>
+  (function () {
+    try {
+      var t = window.localStorage.getItem("lid-theme-v1");
+      if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+    } catch (e) {}
+    try {
+      var f = parseInt(window.localStorage.getItem("lid-font-scale-v1"), 10);
+      if (f >= 80 && f <= 150) document.documentElement.style.setProperty("--app-zoom", f / 100);
+    } catch (e) {}
+  })();
+</script>
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <button id="btn-home" class="topbar-title" type="button" aria-label="Go to start screen">
+      Leben in Deutschland <span class="topbar-subtitle" id="topbar-subtitle">Testtrainer</span>
+    </button>
+    <div class="topbar-actions">
+      <button id="btn-theme-toggle" class="btn btn-ghost btn-small btn-icon" type="button" aria-label="Change color theme" title="Theme: System">
+        <span id="theme-toggle-icon" aria-hidden="true">🖥</span>
+      </button>
+      <button id="btn-settings-nav" class="btn btn-ghost btn-small btn-icon" type="button" aria-label="Einstellungen" title="Einstellungen">
+        <span aria-hidden="true">⚙</span>
+      </button>
+      <button id="btn-stats-nav" class="btn btn-ghost btn-small" type="button">Statistik</button>
+      <button id="btn-lang-toggle" class="btn btn-ghost btn-small" type="button" aria-pressed="false" title="Übersetzung umschalten (Taste L)">
+        <span id="lang-toggle-label">DE</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- START VIEW -->
+    <section id="view-start" class="view">
+      <div id="load-status" class="load-status" hidden></div>
+
+      <div class="scope-block">
+        <button id="btn-all" class="scope-card scope-card-all" type="button">
+          <span class="scope-card-title" id="scope-card-all-title">Alle Fragen</span>
+          <span class="scope-card-count" id="count-all">460</span>
+        </button>
+        <button id="btn-bookmarks" class="scope-card scope-card-bookmarks" type="button">
+          <span class="scope-card-title">★ <span id="scope-card-bookmarks-title">Lesezeichen</span></span>
+          <span class="scope-card-count" id="count-bookmarks">0</span>
+        </button>
+      </div>
+
+      <div class="scope-block">
+        <div class="scope-card-exam">
+          <button id="btn-exam" class="scope-card-exam-main" type="button">
+            <span class="scope-card-exam-icon" aria-hidden="true">⏱</span>
+            <span class="scope-card-exam-text">
+              <span class="scope-card-title" id="scope-card-exam-title">Prüfungssimulation</span>
+              <span class="scope-card-exam-sub" id="scope-card-exam-sub">33 Fragen (30 allgemein + 3 Bayern) · 60 Minuten · 17 richtig zum Bestehen</span>
+            </span>
+          </button>
+          <div class="scope-card-exam-controls">
+            <label id="exam-state-label" for="exam-state-select">Bundesland</label>
+            <select id="exam-state-select" class="exam-state-select"></select>
+            <button id="btn-exam-history" class="btn btn-ghost btn-small" type="button">Verlauf</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="scope-block">
+        <h2 class="section-heading" id="heading-by-topic">Nach Thema</h2>
+        <div id="general-list" class="scope-grid"></div>
+      </div>
+
+      <div class="scope-block">
+        <h2 class="section-heading"><span id="heading-by-state">Nach Bundesland</span> <span class="section-heading-sub" id="heading-by-state-sub">(Landeskunde)</span></h2>
+        <div id="state-list" class="scope-grid"></div>
+      </div>
+    </section>
+
+    <!-- QUIZ VIEW -->
+    <section id="view-quiz" class="view hidden">
+      <div class="quiz-header">
+        <button id="btn-quiz-exit" class="btn btn-ghost btn-small" type="button">&larr; <span id="btn-quiz-exit-label">Zurück</span></button>
+        <div class="quiz-progress" id="quiz-progress">Frage 1 von 1</div>
+        <div class="quiz-score" id="quiz-score">Punkte: 0/0</div>
+        <div class="quiz-timer" id="quiz-timer" hidden>60:00</div>
+      </div>
+
+      <div class="quiz-body">
+        <div class="quiz-top-row">
+          <div class="quiz-category" id="quiz-category"></div>
+          <div class="quiz-top-actions">
+            <button id="btn-audio" class="btn-audio" type="button" aria-pressed="false">
+              <span id="audio-icon" aria-hidden="true">🔊</span>
+            </button>
+            <button id="btn-bookmark" class="btn-bookmark" type="button" aria-pressed="false">
+              <span id="bookmark-icon" aria-hidden="true">☆</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="quiz-image-wrap" class="quiz-image-wrap" hidden>
+          <img id="quiz-image" class="quiz-image" alt="Illustration for this question">
+          <div id="quiz-image-caption" class="quiz-image-caption" hidden></div>
+        </div>
+
+        <h2 id="quiz-question-de" class="quiz-question"></h2>
+        <p id="quiz-question-en" class="quiz-question-en" hidden></p>
+
+        <div id="quiz-answers" class="quiz-answers"></div>
+
+        <div id="quiz-explanation" class="quiz-explanation" hidden>
+          <div class="quiz-explanation-label" id="quiz-explanation-label">Warum ist das richtig?</div>
+          <p id="quiz-explanation-de" class="quiz-explanation-text"></p>
+          <p id="quiz-explanation-en" class="quiz-explanation-text-en" hidden></p>
+        </div>
+
+        <div id="quiz-next-wrap" class="quiz-next-wrap" hidden>
+          <button id="btn-next" class="btn btn-primary" type="button">Weiter</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SUMMARY VIEW -->
+    <section id="view-summary" class="view hidden">
+      <div class="summary-card">
+        <h2 id="summary-heading">Sitzung abgeschlossen</h2>
+        <p class="summary-score" id="summary-score">0 / 0</p>
+        <div id="summary-pass-badge" class="summary-pass-badge" hidden></div>
+        <p class="summary-pct" id="summary-pct"></p>
+        <div class="summary-actions">
+          <button id="btn-review-answers" class="btn btn-secondary" type="button" hidden>Antworten überprüfen</button>
+          <button id="btn-retry" class="btn btn-primary" type="button">Nochmal versuchen</button>
+          <button id="btn-summary-stats" class="btn btn-secondary" type="button">Statistik ansehen</button>
+          <button id="btn-summary-home" class="btn btn-ghost" type="button">Zurück zum Start</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- REVIEW VIEW -->
+    <section id="view-review" class="view hidden">
+      <div class="stats-header">
+        <button id="btn-review-exit" class="btn btn-ghost btn-small" type="button">&larr; <span id="btn-review-exit-label">Zurück</span></button>
+        <h2 id="review-heading">Antworten überprüfen</h2>
+      </div>
+      <div id="review-list" class="review-list"></div>
+    </section>
+
+    <!-- EXAM HISTORY VIEW -->
+    <section id="view-exam-history" class="view hidden">
+      <div class="stats-header">
+        <button id="btn-exam-history-exit" class="btn btn-ghost btn-small" type="button">&larr; <span id="btn-exam-history-exit-label">Zurück</span></button>
+        <h2 id="exam-history-heading">Prüfungsverlauf</h2>
+      </div>
+      <div id="exam-history-list" class="exam-history-list"></div>
+      <p id="exam-history-empty" class="hint" hidden></p>
+      <div class="stats-block">
+        <button id="btn-clear-exam-history" class="btn btn-ghost btn-small" type="button" hidden>Verlauf löschen&hellip;</button>
+      </div>
+    </section>
+
+    <!-- STATS VIEW -->
+    <section id="view-stats" class="view hidden">
+      <div class="stats-header">
+        <button id="btn-stats-exit" class="btn btn-ghost btn-small" type="button">&larr; <span id="btn-stats-exit-label">Zurück</span></button>
+        <h2 id="stats-heading">Deine Statistik</h2>
+      </div>
+
+      <div class="stat-tiles">
+        <div class="stat-tile">
+          <div class="stat-tile-label" id="stat-accuracy-label">Gesamtgenauigkeit</div>
+          <div class="stat-tile-value" id="stat-accuracy">—</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-tile-label" id="stat-coverage-label">Beantwortete Fragen</div>
+          <div class="stat-tile-value" id="stat-coverage">—</div>
+        </div>
+      </div>
+
+      <div class="stats-block">
+        <h3 class="section-heading" id="heading-accuracy-by-category">Genauigkeit nach Kategorie</h3>
+        <div id="stats-chart" class="stats-chart"></div>
+      </div>
+
+      <div class="stats-block">
+        <button id="btn-review-missed" class="btn btn-primary btn-wide" type="button">Falsch beantwortete Fragen üben</button>
+        <p id="review-missed-hint" class="hint"></p>
+      </div>
+
+      <div class="stats-block">
+        <button id="btn-reset-stats" class="btn btn-ghost btn-small" type="button">Statistik zurücksetzen&hellip;</button>
+      </div>
+    </section>
+
+    <!-- SETTINGS VIEW -->
+    <section id="view-settings" class="view hidden">
+      <div class="stats-header">
+        <button id="btn-settings-exit" class="btn btn-ghost btn-small" type="button">&larr; <span id="btn-settings-exit-label">Zurück</span></button>
+        <h2 id="settings-heading">Einstellungen</h2>
+      </div>
+
+      <div class="stats-block">
+        <h3 class="section-heading" id="font-size-heading">Textgröße</h3>
+        <div class="font-size-control">
+          <button id="btn-font-decrease" class="btn btn-secondary btn-icon" type="button" aria-label="Textgröße verkleinern">A&minus;</button>
+          <span id="font-size-value" class="font-size-value">100%</span>
+          <button id="btn-font-increase" class="btn btn-secondary btn-icon" type="button" aria-label="Textgröße vergrößern">A+</button>
+          <button id="btn-font-reset" class="btn btn-ghost btn-small" type="button">Zurücksetzen</button>
+        </div>
+      </div>
+
+      <div class="stats-block">
+        <button id="btn-data-nav" class="btn btn-secondary btn-wide" type="button">Daten sichern &amp; wiederherstellen</button>
+      </div>
+
+      <div class="stats-block">
+        <button id="btn-shortcuts-nav" class="btn btn-secondary btn-wide" type="button">Tastenkürzel</button>
+      </div>
+    </section>
+
+    <!-- SHORTCUTS VIEW -->
+    <section id="view-shortcuts" class="view hidden">
+      <div class="stats-header">
+        <button id="btn-shortcuts-exit" class="btn btn-ghost btn-small" type="button">&larr; <span id="btn-shortcuts-exit-label">Zurück</span></button>
+        <h2 id="shortcuts-heading">Tastenkürzel</h2>
+      </div>
+      <div id="shortcuts-list" class="shortcuts-list"></div>
+      <p id="shortcuts-status" class="hint" hidden></p>
+      <div class="stats-block">
+        <button id="btn-reset-shortcuts" class="btn btn-ghost btn-small" type="button">Auf Standard zurücksetzen&hellip;</button>
+      </div>
+    </section>
+
+    <!-- DATA BACKUP VIEW -->
+    <section id="view-data" class="view hidden">
+      <div class="stats-header">
+        <button id="btn-data-exit" class="btn btn-ghost btn-small" type="button">&larr; <span id="btn-data-exit-label">Zurück</span></button>
+        <h2 id="data-heading">Daten sichern &amp; wiederherstellen</h2>
+      </div>
+
+      <div class="stats-block">
+        <h3 class="section-heading" id="data-export-heading">Exportieren</h3>
+        <p class="hint" id="data-export-hint">Speichert eine Datei mit deiner Statistik, deinen Lesezeichen und deinem Prüfungsverlauf.</p>
+        <button id="btn-export-download" class="btn btn-primary btn-wide" type="button">Datei herunterladen</button>
+        <button id="btn-copy-export" class="btn btn-secondary btn-wide" type="button">In Zwischenablage kopieren</button>
+        <p class="hint" id="data-export-fallback-hint">Falls beides nicht funktioniert, markiere den Text unten und kopiere ihn von Hand.</p>
+        <textarea id="data-export-text" class="data-textarea" readonly rows="6"></textarea>
+      </div>
+
+      <div class="stats-block">
+        <h3 class="section-heading" id="data-import-heading">Importieren</h3>
+        <p class="hint" id="data-import-hint">Wähle eine zuvor exportierte Datei aus. Deine aktuellen Daten auf diesem Gerät werden dabei überschrieben.</p>
+        <label id="btn-import-file-label" for="import-file-input" class="btn btn-secondary btn-wide">Datei auswählen&hellip;</label>
+        <input id="import-file-input" type="file" accept="application/json,.json" hidden>
+        <p class="hint" id="data-import-paste-hint">Oder JSON hier einfügen:</p>
+        <textarea id="data-import-text" class="data-textarea" rows="6"></textarea>
+        <button id="btn-import-apply" class="btn btn-primary btn-wide" type="button">Importieren</button>
+      </div>
+
+      <p id="data-status" class="hint" hidden></p>
+    </section>
+
+  </main>
+
+  <footer class="app-footer">
+    <span id="footer-text">Offline · Daten mit dem offiziellen BAMF-Einbürgerungstest abgeglichen (Stand 05.2025)</span>
+  </footer>
+
+  <div id="app-modal-overlay" class="app-modal-overlay hidden">
+    <div class="app-modal" role="alertdialog" aria-modal="true">
+      <p id="app-modal-message" class="app-modal-message"></p>
+      <div class="app-modal-actions">
+        <button id="app-modal-cancel" class="btn btn-ghost" type="button">Abbrechen</button>
+        <button id="app-modal-confirm" class="btn btn-primary" type="button">OK</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
