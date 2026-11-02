@@ -9,6 +9,8 @@
   var STATS_KEY = "lid-stats-v1";
   var MEDIA_CACHE = "lid-media-v1"; // keep in step with sw.js
   var MEDIA_DOWNLOADS_AT_ONCE = 6;
+  var MEDIA_RETRIES = 3; // GitHub Pages sometimes answers 503 for a single file
+  var MEDIA_MAX_FAILURES = 10; // more than this means the connection is down
   var TOGGLE_KEY = "lid-show-english-v1"; // legacy on/off value, read once to migrate
   var LANGUAGE_KEY = "lid-language-v1";
   var LANGUAGE_PAIR_KEY = "lid-language-pair-v1";
@@ -1217,9 +1219,7 @@
         function nextFile() {
           if (job.stopped || !missing.length) return Promise.resolve();
           var url = missing.shift();
-          // The header tells sw.js to leave this request alone.
-          return fetch(url, { headers: { "x-lid-media-download": "1" } }).then(function (res) {
-            if (!res.ok) throw new Error("HTTP " + res.status);
+          return fetchMedia(url, job, 1).then(function (res) {
             return cache.put(url, res);
           }).then(function () {
             mediaSaved++;
@@ -1230,6 +1230,7 @@
               job.stopped = true;
             } else {
               job.failed++;
+              if (job.failed >= MEDIA_MAX_FAILURES) job.stopped = true;
             }
           }).then(nextFile);
         }
@@ -1245,6 +1246,21 @@
       if (job.noSpace) mediaNotice = { text: t("mediaNoSpace") };
       else if (job.failed) mediaNotice = { text: t("mediaFailed").replace("{count}", job.failed) };
       refreshMedia();
+    });
+  }
+
+  function fetchMedia(url, job, attempt) {
+    // The header tells sw.js to leave this request alone.
+    return fetch(url, { headers: { "x-lid-media-download": "1" } }).then(function (res) {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res;
+    }).catch(function (err) {
+      if (attempt > MEDIA_RETRIES || job.stopped) throw err;
+      return new Promise(function (resolve) {
+        setTimeout(resolve, attempt * 1000);
+      }).then(function () {
+        return fetchMedia(url, job, attempt + 1);
+      });
     });
   }
 
