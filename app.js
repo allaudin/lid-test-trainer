@@ -7,6 +7,8 @@
   "use strict";
 
   var STATS_KEY = "lid-stats-v1";
+  var MEDIA_CACHE = "lid-media-v1"; // keep in step with sw.js
+  var MEDIA_DOWNLOADS_AT_ONCE = 6;
   var TOGGLE_KEY = "lid-show-english-v1"; // legacy on/off value, read once to migrate
   var LANGUAGE_KEY = "lid-language-v1";
   var LANGUAGE_PAIR_KEY = "lid-language-pair-v1";
@@ -207,6 +209,32 @@
       de: "Alle Tastenkürzel auf die Standardwerte zurücksetzen?",
       en: "Reset all keyboard shortcuts to their defaults?",
       ur: "تمام کی بورڈ شارٹ کٹس ڈیفالٹ پر واپس لے آئیں؟"
+    },
+    mediaHeading: { de: "Offline-Medien", en: "Offline media", ur: "آف لائن میڈیا" },
+    mediaHint: {
+      de: "Lädt alle Audioaufnahmen und Bilder (etwa 107 MB) auf dieses Gerät, damit sie auch ohne Internet funktionieren. Am besten im WLAN.",
+      en: "Saves all audio clips and images (about 107 MB) on this device so they work without internet. Wi-Fi recommended.",
+      ur: "تمام آڈیو کلپس اور تصاویر (تقریباً 107 MB) اس ڈیوائس پر محفوظ کرتا ہے تاکہ وہ انٹرنیٹ کے بغیر بھی چلیں۔ Wi-Fi بہتر رہے گا۔"
+    },
+    mediaProgress: { de: "{done} von {total} Dateien gespeichert", en: "{done} of {total} files saved", ur: "{total} میں سے {done} فائلیں محفوظ ہیں" },
+    mediaComplete: { de: "Alle Medien sind offline verfügbar.", en: "All media is available offline.", ur: "تمام میڈیا آف لائن دستیاب ہے۔" },
+    mediaFailed: {
+      de: "{count} Dateien konnten nicht geladen werden. Prüfe die Verbindung und versuche es erneut.",
+      en: "{count} files could not be downloaded. Check your connection and try again.",
+      ur: "{count} فائلیں ڈاؤن لوڈ نہیں ہو سکیں۔ اپنا کنکشن چیک کریں اور دوبارہ کوشش کریں۔"
+    },
+    mediaNoSpace: {
+      de: "Nicht genug Speicherplatz. Bereits geladene Dateien bleiben erhalten.",
+      en: "Not enough storage space. Files already saved have been kept.",
+      ur: "اسٹوریج کی جگہ کافی نہیں۔ پہلے سے محفوظ فائلیں برقرار ہیں۔"
+    },
+    btnMediaDownload: { de: "Alle Medien herunterladen", en: "Download all media", ur: "تمام میڈیا ڈاؤن لوڈ کریں" },
+    btnMediaCancel: { de: "Abbrechen", en: "Cancel", ur: "منسوخ کریں" },
+    btnMediaRemove: { de: "Heruntergeladene Medien entfernen…", en: "Remove downloaded media…", ur: "ڈاؤن لوڈ شدہ میڈیا ہٹائیں…" },
+    mediaRemoveConfirm: {
+      de: "Alle gespeicherten Audioaufnahmen und Bilder von diesem Gerät entfernen? Deine Statistik bleibt erhalten.",
+      en: "Remove all saved audio clips and images from this device? Your stats are kept.",
+      ur: "تمام محفوظ آڈیو کلپس اور تصاویر اس ڈیوائس سے ہٹا دیں؟ آپ کے اعداد و شمار برقرار رہیں گے۔"
     }
   };
   function t(key) { return STRINGS[key][language]; }
@@ -261,6 +289,7 @@
   function init() {
     cacheDom();
     wireGlobalControls();
+    registerServiceWorker();
     fetch("data.json")
       .then(function (res) {
         if (!res.ok) throw new Error("HTTP " + res.status);
@@ -412,6 +441,14 @@
     el.dataImportPasteHint = document.getElementById("data-import-paste-hint");
     el.dataImportText = document.getElementById("data-import-text");
     el.btnImportApply = document.getElementById("btn-import-apply");
+    el.mediaBlock = document.getElementById("media-block");
+    el.mediaHeadingEl = document.getElementById("media-heading");
+    el.mediaHint = document.getElementById("media-hint");
+    el.mediaProgress = document.getElementById("media-progress");
+    el.mediaStatus = document.getElementById("media-status");
+    el.btnMediaDownload = document.getElementById("btn-media-download");
+    el.btnMediaCancel = document.getElementById("btn-media-cancel");
+    el.btnMediaRemove = document.getElementById("btn-media-remove");
     el.dataStatus = document.getElementById("data-status");
 
     el.appModalOverlay = document.getElementById("app-modal-overlay");
@@ -659,6 +696,13 @@
     el.btnDataExit.addEventListener("click", function () {
       showView("settings");
     });
+    el.btnMediaDownload.addEventListener("click", downloadAllMedia);
+    el.btnMediaCancel.addEventListener("click", function () {
+      if (mediaJob) mediaJob.stopped = true;
+    });
+    el.btnMediaRemove.addEventListener("click", function () {
+      showConfirm(t("mediaRemoveConfirm"), removeMedia);
+    });
     el.btnExportDownload.addEventListener("click", triggerExportDownload);
     el.btnCopyExport.addEventListener("click", copyExportToClipboard);
     el.dataExportText.addEventListener("focus", function () { el.dataExportText.select(); });
@@ -736,6 +780,12 @@
     el.importFileLabel.textContent = t("btnImportFile");
     el.dataImportPasteHint.textContent = t("dataImportPasteHint");
     el.btnImportApply.textContent = t("btnImportApply");
+    el.mediaHeadingEl.textContent = t("mediaHeading");
+    el.mediaHint.textContent = t("mediaHint");
+    el.btnMediaDownload.textContent = t("btnMediaDownload");
+    el.btnMediaCancel.textContent = t("btnMediaCancel");
+    el.btnMediaRemove.textContent = t("btnMediaRemove");
+    renderMedia();
 
     el.btnSettingsNav.setAttribute("title", t("settingsNav"));
     el.btnSettingsNav.setAttribute("aria-label", t("settingsNav"));
@@ -1079,6 +1129,131 @@
     };
     map[name].classList.remove("hidden");
     window.scrollTo(0, 0);
+    if (name === "settings") refreshMedia();
+  }
+
+  // ---------- Offline support ----------
+  var mediaSaved = 0;
+  var mediaNotice = null; // { text, kind } shown under the progress bar
+  var mediaJob = null; // the running download
+
+  function offlineSupported() {
+    return "serviceWorker" in navigator && "caches" in window;
+  }
+
+  function registerServiceWorker() {
+    if (!offlineSupported()) return;
+    navigator.serviceWorker.register("sw.js").catch(function () {
+      // The app works the same without it, only not offline.
+    });
+  }
+
+  // Every audio clip and image the app can ask for.
+  function listMediaFiles() {
+    var files = ["audio/antwort-1.mp3", "audio/antwort-2.mp3", "audio/antwort-3.mp3", "audio/antwort-4.mp3"];
+    DATA.forEach(function (q) {
+      files.push("audio/q" + q.id + ".mp3");
+      q.answers_de.forEach(function (_, i) { files.push("audio/q" + q.id + "-a" + i + ".mp3"); });
+      if (q.explanation_de) files.push("audio/q" + q.id + "-e.mp3");
+      if (q.img && q.img.url && files.indexOf("img/" + q.img.url + ".png") < 0) {
+        files.push("img/" + q.img.url + ".png"); // some questions share an image
+      }
+    });
+    return files.map(function (file) { return new URL(file, location.href).href; });
+  }
+
+  function missingMedia(cache) {
+    return cache.keys().then(function (requests) {
+      var saved = {};
+      requests.forEach(function (request) { saved[request.url] = true; });
+      return listMediaFiles().filter(function (url) { return !saved[url]; });
+    });
+  }
+
+  function refreshMedia() {
+    if (!offlineSupported() || mediaJob) return renderMedia();
+    caches.open(MEDIA_CACHE).then(missingMedia).then(function (missing) {
+      mediaSaved = listMediaFiles().length - missing.length;
+      renderMedia();
+    }).catch(renderMedia);
+  }
+
+  function renderMedia() {
+    el.mediaBlock.hidden = !offlineSupported();
+    var total = listMediaFiles().length;
+    var complete = total > 0 && mediaSaved >= total;
+    el.mediaProgress.max = total || 1;
+    el.mediaProgress.value = mediaSaved;
+    el.btnMediaDownload.hidden = !!mediaJob || complete;
+    el.btnMediaCancel.hidden = !mediaJob;
+    el.btnMediaRemove.hidden = !!mediaJob || mediaSaved === 0;
+
+    var kind = "";
+    var text = t("mediaProgress").replace("{done}", mediaSaved).replace("{total}", total);
+    if (!mediaJob && complete) {
+      text = t("mediaComplete");
+      kind = "is-success";
+    } else if (!mediaJob && mediaNotice) {
+      text = mediaNotice.text;
+      kind = "is-error";
+    }
+    el.mediaStatus.textContent = text;
+    el.mediaStatus.className = "hint " + kind;
+  }
+
+  function downloadAllMedia() {
+    if (mediaJob || !DATA.length) return;
+    var job = mediaJob = { stopped: false, failed: 0, noSpace: false };
+    mediaNotice = null;
+    renderMedia();
+    // Asks the browser not to clear this data when storage runs low.
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
+
+    caches.open(MEDIA_CACHE).then(function (cache) {
+      return missingMedia(cache).then(function (missing) {
+        mediaSaved = listMediaFiles().length - missing.length;
+        renderMedia();
+
+        function nextFile() {
+          if (job.stopped || !missing.length) return Promise.resolve();
+          var url = missing.shift();
+          // The header tells sw.js to leave this request alone.
+          return fetch(url, { headers: { "x-lid-media-download": "1" } }).then(function (res) {
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            return cache.put(url, res);
+          }).then(function () {
+            mediaSaved++;
+            renderMedia();
+          }).catch(function (err) {
+            if (err && err.name === "QuotaExceededError") {
+              job.noSpace = true;
+              job.stopped = true;
+            } else {
+              job.failed++;
+            }
+          }).then(nextFile);
+        }
+
+        var workers = [];
+        for (var i = 0; i < MEDIA_DOWNLOADS_AT_ONCE; i++) workers.push(nextFile());
+        return Promise.all(workers);
+      });
+    }).catch(function () {
+      job.failed = job.failed || 1;
+    }).then(function () {
+      mediaJob = null;
+      if (job.noSpace) mediaNotice = { text: t("mediaNoSpace") };
+      else if (job.failed) mediaNotice = { text: t("mediaFailed").replace("{count}", job.failed) };
+      refreshMedia();
+    });
+  }
+
+  function removeMedia() {
+    caches.delete(MEDIA_CACHE).then(function () {
+      mediaSaved = 0;
+      mediaNotice = null;
+      renderMedia();
+    });
   }
 
   // ---------- Start screen ----------

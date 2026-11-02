@@ -31,6 +31,14 @@ pip install edge-tts
 python3 tools/generate_audio.py
 ```
 
+## Install and offline use
+
+The app is a progressive web app. On desktop Chrome or Edge, use the install button in the address bar. On Android, choose **Add to Home screen** from the browser menu. On iPhone, open the site in Safari and choose **Share**, then **Add to Home Screen**.
+
+Once it has loaded, the app and all questions work offline. Audio clips and images are saved the first time they're used. To save all of them at once (about 107 MB), open **Settings** (Einstellungen) and select **Download all media** (Alle Medien herunterladen). You can cancel and resume the download, and remove the files from the same place.
+
+After regenerating clips or images, change `MEDIA_CACHE` in both `sw.js` and `app.js`. Otherwise installed copies keep the old files.
+
 ## Language
 
 Choose German, English or Urdu from the dropdown at the top of the page. Press `L` to switch between two languages, German and English by default. To pick the two, open **Settings** (Einstellungen) and choose **Keyboard shortcuts** (Tastenkürzel).

@@ -886,6 +886,20 @@ label.btn { display: block; text-align: center; box-sizing: border-box; }
 #data-status.is-error { color: var(--status-critical); }
 #data-status.is-success { color: var(--status-good); }
 
+/* ---------- Offline media ---------- */
+.media-block [hidden],
+.media-block[hidden] { display: none; }
+.media-progress {
+  display: block;
+  width: 100%;
+  height: 8px;
+  margin-top: 12px;
+  accent-color: var(--accent);
+}
+#media-status { margin-bottom: 12px; }
+#media-status.is-error { color: var(--status-critical); }
+#media-status.is-success { color: var(--status-good); }
+
 /* ---------- Modal (replaces native confirm/alert, which sandboxed embeds can block) ---------- */
 .app-modal-overlay {
   position: fixed;
