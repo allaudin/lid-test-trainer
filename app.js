@@ -91,6 +91,15 @@
     questionsAttempted: { de: "Beantwortete Fragen", en: "Questions attempted", ur: "حل کیے گئے سوالات" },
     accuracyByCategory: { de: "Genauigkeit nach Kategorie", en: "Accuracy by category", ur: "زمرے کے لحاظ سے درستگی" },
     reviewMissed: { de: "Falsch beantwortete Fragen üben", en: "Review missed questions", ur: "غلط جواب والے سوالات کی مشق کریں" },
+    viewMissed: { de: "Falsch beantwortete Fragen ansehen", en: "View missed questions", ur: "غلط جواب والے سوالات دیکھیں" },
+    missedTitle: { de: "Falsch beantwortet", en: "Missed questions", ur: "غلط جواب والے سوالات" },
+    missedHeading: { de: "Falsch beantwortete Fragen", en: "Missed questions", ur: "غلط جواب والے سوالات" },
+    missedPractice: { de: "Diese Fragen üben", en: "Practice these questions", ur: "ان سوالات کی مشق کریں" },
+    missedListHint: {
+      de: "Die schwächsten Fragen stehen oben. Grün ist die richtige Antwort, rot deine letzte falsche Antwort.",
+      en: "Your weakest questions are at the top. Green is the correct answer, red is the wrong answer you picked last.",
+      ur: "سب سے کمزور سوالات سب سے اوپر ہیں۔ سبز درست جواب ہے، سرخ وہ غلط جواب ہے جو آپ نے آخری بار چنا۔"
+    },
     reviewMissedEmpty: { de: "Noch keine falschen Antworten — übe weiter, dann füllt sich das hier.", en: "No missed questions yet — keep practicing and this will fill in.", ur: "ابھی کوئی غلط جواب نہیں — مشق جاری رکھیں، یہ فہرست بھر جائے گی۔" },
     reviewMissedHint: { de: "Sortiert nach den schwächsten und zuletzt falsch beantworteten Fragen.", en: "Ordered so your weakest and most recently missed questions come first.", ur: "سب سے کمزور اور حال ہی میں غلط ہونے والے سوالات پہلے دکھائے جاتے ہیں۔" },
     resetStats: { de: "Statistik zurücksetzen…", en: "Reset all stats…", ur: "تمام اعداد و شمار صاف کریں…" },
@@ -276,6 +285,7 @@
   var listeningForKey = null;
 
   var session = null; // active quiz session
+  var missedReturnView = "start"; // where the missed-questions list's back button goes
   var audioRun = 0; // bumped on every start/stop so stale speech callbacks can be ignored
   var audioPlaying = false;
   var audioPlayer = new Audio();
@@ -331,6 +341,9 @@
     el.btnBookmarks = document.getElementById("btn-bookmarks");
     el.bookmarksTitle = document.getElementById("scope-card-bookmarks-title");
     el.countBookmarks = document.getElementById("count-bookmarks");
+    el.btnMissed = document.getElementById("btn-missed");
+    el.missedTitle = document.getElementById("scope-card-missed-title");
+    el.countMissed = document.getElementById("count-missed");
     el.headingByTopic = document.getElementById("heading-by-topic");
     el.headingByState = document.getElementById("heading-by-state");
     el.headingByStateSub = document.getElementById("heading-by-state-sub");
@@ -347,6 +360,15 @@
     el.viewStats = document.getElementById("view-stats");
     el.viewReview = document.getElementById("view-review");
     el.viewExamHistory = document.getElementById("view-exam-history");
+    el.viewMissed = document.getElementById("view-missed");
+    el.btnMissedExit = document.getElementById("btn-missed-exit");
+    el.btnMissedExitLabel = document.getElementById("btn-missed-exit-label");
+    el.missedHeadingEl = document.getElementById("missed-heading");
+    el.missedActions = document.getElementById("missed-actions");
+    el.btnMissedPractice = document.getElementById("btn-missed-practice");
+    el.missedHint = document.getElementById("missed-hint");
+    el.missedList = document.getElementById("missed-list");
+    el.missedEmpty = document.getElementById("missed-empty");
 
     el.btnQuizExit = document.getElementById("btn-quiz-exit");
     el.btnQuizExitLabel = document.getElementById("btn-quiz-exit-label");
@@ -403,6 +425,7 @@
     el.statsChart = document.getElementById("stats-chart");
     el.btnReviewMissed = document.getElementById("btn-review-missed");
     el.reviewMissedHint = document.getElementById("review-missed-hint");
+    el.btnViewMissed = document.getElementById("btn-view-missed");
     el.btnResetStats = document.getElementById("btn-reset-stats");
     el.footerText = document.getElementById("footer-text");
 
@@ -574,6 +597,15 @@
       }
       startSession(scope);
     });
+    el.btnMissed.addEventListener("click", function () {
+      openMissedScreen("start");
+    });
+    el.btnMissedExit.addEventListener("click", function () {
+      if (missedReturnView === "stats") buildStatsScreen();
+      else if (DATA.length) buildStartScreen();
+      showView(missedReturnView);
+    });
+    el.btnMissedPractice.addEventListener("click", startMissedSession);
     el.btnBookmark.addEventListener("click", function () {
       if (!session) return;
       toggleBookmark(session.questions[session.index].id);
@@ -632,11 +664,9 @@
     el.btnStatsExit.addEventListener("click", function () {
       showView("start");
     });
-    el.btnReviewMissed.addEventListener("click", function () {
-      var scope = { type: "missed", label: t("reviewMissed") };
-      var qs = getQuestionsForScope(scope);
-      if (qs.length === 0) return;
-      startSession(scope);
+    el.btnReviewMissed.addEventListener("click", startMissedSession);
+    el.btnViewMissed.addEventListener("click", function () {
+      openMissedScreen("stats");
     });
     el.btnResetStats.addEventListener("click", function () {
       showConfirm(t("resetConfirm"), function () {
@@ -756,6 +786,10 @@
     el.btnResetStats.textContent = t("resetStats");
     el.footerText.textContent = t("footer");
     el.bookmarksTitle.textContent = t("bookmarks");
+    el.missedTitle.textContent = t("missedTitle");
+    el.btnMissedExitLabel.textContent = t("back");
+    el.missedHeadingEl.textContent = t("missedHeading");
+    el.btnMissedPractice.textContent = t("missedPractice");
     el.examTitleEl.textContent = t("examTitle");
     updateExamSub();
     el.examStateLabel.textContent = t("examStateLabel");
@@ -859,6 +893,7 @@
     }
     if (!el.viewStats.classList.contains("hidden")) buildStatsScreen();
     if (!el.viewReview.classList.contains("hidden")) buildReviewScreen();
+    if (!el.viewMissed.classList.contains("hidden")) buildMissedScreen();
     if (!el.viewExamHistory.classList.contains("hidden")) buildExamHistoryScreen();
     if (!el.viewShortcuts.classList.contains("hidden")) buildShortcutsScreen();
   }
@@ -1121,12 +1156,12 @@
   // ---------- View switching ----------
   function showView(name) {
     stopAudio();
-    [el.viewStart, el.viewQuiz, el.viewSummary, el.viewStats, el.viewReview, el.viewExamHistory, el.viewData, el.viewShortcuts, el.viewSettings].forEach(function (v) {
+    [el.viewStart, el.viewQuiz, el.viewSummary, el.viewStats, el.viewReview, el.viewExamHistory, el.viewMissed, el.viewData, el.viewShortcuts, el.viewSettings].forEach(function (v) {
       v.classList.add("hidden");
     });
     var map = {
       start: el.viewStart, quiz: el.viewQuiz, summary: el.viewSummary, stats: el.viewStats,
-      review: el.viewReview, examHistory: el.viewExamHistory, data: el.viewData, shortcuts: el.viewShortcuts,
+      review: el.viewReview, examHistory: el.viewExamHistory, missed: el.viewMissed, data: el.viewData, shortcuts: el.viewShortcuts,
       settings: el.viewSettings
     };
     map[name].classList.remove("hidden");
@@ -1278,6 +1313,8 @@
     el.btnAllTitle.textContent = t("allQuestions");
     el.bookmarksTitle.textContent = t("bookmarks");
     el.countBookmarks.textContent = String(Object.keys(bookmarks).length);
+    el.missedTitle.textContent = t("missedTitle");
+    el.countMissed.textContent = String(getQuestionsForScope({ type: "missed" }).length);
 
     var byCategory = {};
     DATA.forEach(function (d) {
@@ -1563,6 +1600,7 @@
     } else {
       s.wrong += 1;
       s.lastWrong = Date.now();
+      s.lastWrongChoice = chosen.origIndex;
     }
     s.lastSeen = Date.now();
     saveStats();
@@ -1678,15 +1716,6 @@
     el.reviewList.innerHTML = "";
     session.questions.forEach(function (q, i) {
       var ans = session.answers[i];
-      var item = document.createElement("div");
-      item.className = "review-item";
-
-      var head = document.createElement("div");
-      head.className = "review-item-head";
-      var num = document.createElement("span");
-      num.className = "review-item-num";
-      num.textContent = "#" + (i + 1) + " · " + q.category_de;
-      var status = document.createElement("span");
       var statusCls, statusText;
       if (!ans) {
         statusCls = "is-unanswered";
@@ -1698,63 +1727,127 @@
         statusCls = "is-wrong";
         statusText = t("reviewWrong");
       }
-      status.className = "review-item-status " + statusCls;
-      status.textContent = statusText;
-      head.appendChild(num);
-      head.appendChild(status);
-      item.appendChild(head);
+      el.reviewList.appendChild(makeReviewItem(q, {
+        label: "#" + (i + 1) + " · " + q.category_de,
+        statusCls: statusCls,
+        statusText: statusText,
+        wrongIndex: ans && !ans.isCorrect ? ans.chosenOrigIndex : null
+      }));
+    });
+  }
 
-      var question = document.createElement("p");
-      question.className = "review-item-question";
-      question.textContent = q.question_de;
-      item.appendChild(question);
-      if (language !== "de") {
-        var questionEn = document.createElement("p");
-        questionEn.className = "review-item-question-en";
-        questionEn.textContent = translated(q, "question");
-        item.appendChild(questionEn);
+  // One question card: question, all answers (correct one green, the given
+  // wrong one red) and the explanation. Shared by exam review and missed list.
+  function makeReviewItem(q, opts) {
+    var item = document.createElement("div");
+    item.className = "review-item";
+
+    var head = document.createElement("div");
+    head.className = "review-item-head";
+    var num = document.createElement("span");
+    num.className = "review-item-num";
+    num.textContent = opts.label;
+    var status = document.createElement("span");
+    status.className = "review-item-status " + opts.statusCls;
+    status.textContent = opts.statusText;
+    head.appendChild(num);
+    head.appendChild(status);
+    item.appendChild(head);
+
+    if (q.img && q.img.url) {
+      var img = document.createElement("img");
+      img.className = "review-item-image";
+      img.loading = "lazy";
+      img.src = "img/" + q.img.url + ".png";
+      img.alt = q.question_en || q.question_de;
+      item.appendChild(img);
+    }
+
+    var question = document.createElement("p");
+    question.className = "review-item-question";
+    question.textContent = q.question_de;
+    item.appendChild(question);
+    if (language !== "de") {
+      var questionEn = document.createElement("p");
+      questionEn.className = "review-item-question-en";
+      questionEn.textContent = translated(q, "question");
+      item.appendChild(questionEn);
+    }
+
+    var answersWrap = document.createElement("div");
+    answersWrap.className = "review-item-answers";
+    q.answers_de.forEach(function (text, origIdx) {
+      var row = document.createElement("div");
+      row.className = "review-item-answer";
+      if (origIdx === q.correct) row.classList.add("is-correct-answer");
+      else if (origIdx === opts.wrongIndex) row.classList.add("is-wrong-chosen");
+      row.textContent = text;
+      var rowTranslation = language === "de" ? "" : (q["answers_" + language] || [])[origIdx];
+      if (rowTranslation && rowTranslation !== text) {
+        var rowLine = document.createElement("div");
+        rowLine.className = "review-item-answer-translation";
+        rowLine.textContent = rowTranslation;
+        row.appendChild(rowLine);
       }
+      answersWrap.appendChild(row);
+    });
+    item.appendChild(answersWrap);
 
-      var answersWrap = document.createElement("div");
-      answersWrap.className = "review-item-answers";
-      q.answers_de.forEach(function (text, origIdx) {
-        var row = document.createElement("div");
-        row.className = "review-item-answer";
-        if (origIdx === q.correct) row.classList.add("is-correct-answer");
-        if (ans && !ans.isCorrect && origIdx === ans.chosenOrigIndex) row.classList.add("is-wrong-chosen");
-        row.textContent = text;
-        var rowTranslation = language === "de" ? "" : (q["answers_" + language] || [])[origIdx];
-        if (rowTranslation && rowTranslation !== text) {
-          var rowLine = document.createElement("div");
-          rowLine.className = "review-item-answer-translation";
-          rowLine.textContent = rowTranslation;
-          row.appendChild(rowLine);
-        }
-        answersWrap.appendChild(row);
-      });
-      item.appendChild(answersWrap);
-
-      if (q.explanation_de) {
-        var expl = document.createElement("div");
-        expl.className = "review-item-explanation";
-        var explLabel = document.createElement("div");
-        explLabel.className = "review-item-explanation-label";
-        explLabel.textContent = t("explanationLabel");
-        var explDe = document.createElement("p");
-        explDe.className = "review-item-explanation-text";
-        explDe.textContent = q.explanation_de;
-        expl.appendChild(explLabel);
-        expl.appendChild(explDe);
-        if (translated(q, "explanation")) {
-          var explEn = document.createElement("p");
-          explEn.className = "review-item-explanation-text-en";
-          explEn.textContent = translated(q, "explanation");
-          expl.appendChild(explEn);
-        }
-        item.appendChild(expl);
+    if (q.explanation_de) {
+      var expl = document.createElement("div");
+      expl.className = "review-item-explanation";
+      var explLabel = document.createElement("div");
+      explLabel.className = "review-item-explanation-label";
+      explLabel.textContent = t("explanationLabel");
+      var explDe = document.createElement("p");
+      explDe.className = "review-item-explanation-text";
+      explDe.textContent = q.explanation_de;
+      expl.appendChild(explLabel);
+      expl.appendChild(explDe);
+      if (translated(q, "explanation")) {
+        var explEn = document.createElement("p");
+        explEn.className = "review-item-explanation-text-en";
+        explEn.textContent = translated(q, "explanation");
+        expl.appendChild(explEn);
       }
+      item.appendChild(expl);
+    }
 
-      el.reviewList.appendChild(item);
+    return item;
+  }
+
+  // ---------- Missed questions screen ----------
+  function openMissedScreen(returnView) {
+    missedReturnView = returnView;
+    buildMissedScreen();
+    showView("missed");
+  }
+
+  function startMissedSession() {
+    var scope = { type: "missed", label: t("reviewMissed") };
+    if (getQuestionsForScope(scope).length === 0) return;
+    startSession(scope);
+  }
+
+  function buildMissedScreen() {
+    var questions = getQuestionsForScope({ type: "missed" });
+    el.missedList.innerHTML = "";
+    el.missedActions.hidden = questions.length === 0;
+    el.missedEmpty.hidden = questions.length > 0;
+    el.missedEmpty.textContent = t("reviewMissedEmpty");
+    el.missedHint.textContent = t("missedListHint");
+    el.btnMissedPractice.textContent = t("missedPractice") + " (" + questions.length + ")";
+
+    questions.forEach(function (q) {
+      var s = stats[String(q.id)];
+      var counts = t("reviewWrong") + " " + s.wrong + "×";
+      if (s.correct > 0) counts += " · " + t("reviewCorrect") + " " + s.correct + "×";
+      el.missedList.appendChild(makeReviewItem(q, {
+        label: q.category_de,
+        statusCls: "is-wrong",
+        statusText: counts,
+        wrongIndex: typeof s.lastWrongChoice === "number" ? s.lastWrongChoice : null
+      }));
     });
   }
 
@@ -2138,6 +2231,8 @@
     var missedCount = getQuestionsForScope({ type: "missed" }).length;
     el.btnReviewMissed.disabled = missedCount === 0;
     el.btnReviewMissed.textContent = t("reviewMissed") + (missedCount > 0 ? " (" + missedCount + ")" : "");
+    el.btnViewMissed.disabled = missedCount === 0;
+    el.btnViewMissed.textContent = t("viewMissed");
     el.reviewMissedHint.textContent = missedCount === 0
       ? t("reviewMissedEmpty")
       : t("reviewMissedHint");

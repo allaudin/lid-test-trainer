@@ -652,6 +652,13 @@ main { flex: 1; padding: 16px; padding-bottom: max(32px, env(safe-area-inset-bot
 .review-item-status.is-correct { background: var(--correct-bg); color: var(--status-good); }
 .review-item-status.is-wrong { background: var(--wrong-bg); color: var(--status-critical); }
 .review-item-status.is-unanswered { background: var(--surface-2); color: var(--text-muted); }
+.review-item-image {
+  display: block;
+  max-width: 100%;
+  max-height: 220px;
+  margin: 4px 0 8px;
+  border-radius: 8px;
+}
 .review-item-question {
   font-size: 15px;
   font-weight: 600;

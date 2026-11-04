@@ -57,6 +57,10 @@
           <span class="scope-card-title">★ <span id="scope-card-bookmarks-title">Lesezeichen</span></span>
           <span class="scope-card-count" id="count-bookmarks">0</span>
         </button>
+        <button id="btn-missed" class="scope-card scope-card-bookmarks" type="button">
+          <span class="scope-card-title">✗ <span id="scope-card-missed-title">Falsch beantwortet</span></span>
+          <span class="scope-card-count" id="count-missed">0</span>
+        </button>
       </div>
 
       <div class="scope-block">
@@ -156,6 +160,20 @@
       <div id="review-list" class="review-list"></div>
     </section>
 
+    <!-- MISSED QUESTIONS VIEW -->
+    <section id="view-missed" class="view hidden">
+      <div class="stats-header">
+        <button id="btn-missed-exit" class="btn btn-ghost btn-small" type="button">&larr; <span id="btn-missed-exit-label">Zurück</span></button>
+        <h2 id="missed-heading">Falsch beantwortete Fragen</h2>
+      </div>
+      <div id="missed-actions" class="stats-block">
+        <button id="btn-missed-practice" class="btn btn-primary btn-wide" type="button">Diese Fragen üben</button>
+        <p id="missed-hint" class="hint"></p>
+      </div>
+      <div id="missed-list" class="review-list"></div>
+      <p id="missed-empty" class="hint" hidden></p>
+    </section>
+
     <!-- EXAM HISTORY VIEW -->
     <section id="view-exam-history" class="view hidden">
       <div class="stats-header">
@@ -194,6 +212,7 @@
 
       <div class="stats-block">
         <button id="btn-review-missed" class="btn btn-primary btn-wide" type="button">Falsch beantwortete Fragen üben</button>
+        <button id="btn-view-missed" class="btn btn-secondary btn-wide" type="button">Falsch beantwortete Fragen ansehen</button>
         <p id="review-missed-hint" class="hint"></p>
       </div>
 

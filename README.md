@@ -39,6 +39,10 @@ Once it has loaded, the app and all questions work offline. Audio clips and imag
 
 After regenerating clips or images, change `MEDIA_CACHE` in both `sw.js` and `app.js`. Otherwise installed copies keep the old files.
 
+## Missed questions
+
+Select **Missed questions** (Falsch beantwortet) on the start screen, or **View missed questions** on the stats screen, to see every question you've answered wrong. Your weakest ones are at the top. Each question shows how often you got it wrong and right, with the correct answer in green and the wrong answer you picked last in red. Select **Practice these questions** to go through them as a quiz.
+
 ## Language
 
 Choose German, English or Urdu from the dropdown at the top of the page. Press `L` to switch between two languages, German and English by default. To pick the two, open **Settings** (Einstellungen) and choose **Keyboard shortcuts** (Tastenkürzel).
