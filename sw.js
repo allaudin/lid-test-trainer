@@ -20,7 +20,10 @@ var SHELL_FILES = [
 
 self.addEventListener("install", function (event) {
   event.waitUntil(
-    caches.open(SHELL_CACHE).then(function (cache) { return cache.addAll(SHELL_FILES); })
+    caches.open(SHELL_CACHE).then(function (cache) {
+      // "reload" skips the browser's HTTP cache so a new worker never stores old files.
+      return cache.addAll(SHELL_FILES.map(function (f) { return new Request(f, { cache: "reload" }); }));
+    })
   );
   self.skipWaiting();
 });
@@ -49,8 +52,10 @@ self.addEventListener("fetch", function (event) {
 });
 
 // App files: the latest version when online, the cached copy when offline.
+// GitHub Pages lets browsers reuse files for 10 minutes. "no-cache" checks with
+// the server every time, so a new index.html never runs with an old app.js.
 function networkFirst(request) {
-  return fetch(request).then(function (response) {
+  return fetch(request, { cache: "no-cache" }).then(function (response) {
     if (response.ok) {
       var copy = response.clone();
       return caches.open(SHELL_CACHE)

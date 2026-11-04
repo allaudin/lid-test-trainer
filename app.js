@@ -28,6 +28,7 @@
   var BOOKMARKS_KEY_LEGACY = "lid-favorites-v1";
   var EXAM_STATE_KEY = "lid-exam-state-v1";
   var EXAM_HISTORY_KEY = "lid-exam-history-v1";
+  var MISSED_CLEARED_KEY = "lid-missed-cleared-v1"; // time the missed list was last cleared
   var EXAM_HISTORY_MAX = 50;
   var KEYBINDINGS_KEY = "lid-keybindings-v1";
   var DEFAULT_KEYBINDINGS = {
@@ -90,11 +91,17 @@
     overallAccuracy: { de: "Gesamtgenauigkeit", en: "Overall accuracy", ur: "مجموعی درستگی" },
     questionsAttempted: { de: "Beantwortete Fragen", en: "Questions attempted", ur: "حل کیے گئے سوالات" },
     accuracyByCategory: { de: "Genauigkeit nach Kategorie", en: "Accuracy by category", ur: "زمرے کے لحاظ سے درستگی" },
-    reviewMissed: { de: "Falsch beantwortete Fragen üben", en: "Review missed questions", ur: "غلط جواب والے سوالات کی مشق کریں" },
+    reviewMissed: { de: "Falsch beantwortete Fragen üben", en: "Practice missed questions", ur: "غلط جواب والے سوالات کی مشق کریں" },
     viewMissed: { de: "Falsch beantwortete Fragen ansehen", en: "View missed questions", ur: "غلط جواب والے سوالات دیکھیں" },
     missedTitle: { de: "Falsch beantwortet", en: "Missed questions", ur: "غلط جواب والے سوالات" },
     missedHeading: { de: "Falsch beantwortete Fragen", en: "Missed questions", ur: "غلط جواب والے سوالات" },
     missedPractice: { de: "Diese Fragen üben", en: "Practice these questions", ur: "ان سوالات کی مشق کریں" },
+    clearMissed: { de: "Liste leeren…", en: "Clear list…", ur: "فہرست صاف کریں…" },
+    clearMissedConfirm: {
+      de: "Liste der falsch beantworteten Fragen leeren? Deine Statistik bleibt erhalten. Fragen, die du danach falsch beantwortest, erscheinen wieder hier.",
+      en: "Clear the list of missed questions? Your stats are kept. Questions you get wrong after this will show up here again.",
+      ur: "غلط جواب والے سوالات کی فہرست صاف کریں؟ آپ کے اعداد و شمار محفوظ رہیں گے۔ اس کے بعد غلط جواب والے سوالات یہاں دوبارہ آئیں گے۔"
+    },
     missedListHint: {
       de: "Die schwächsten Fragen stehen oben. Grün ist die richtige Antwort, rot deine letzte falsche Antwort.",
       en: "Your weakest questions are at the top. Green is the correct answer, red is the wrong answer you picked last.",
@@ -280,6 +287,7 @@
   var bookmarks = loadBookmarks();
   var examState = loadExamState(); // English category key, e.g. "Bavaria" — defaults to STATE_ORDER[0]
   var examHistory = loadExamHistory();
+  var missedClearedAt = loadMissedClearedAt();
   var examTimerId = null;
   var keybindings = loadKeybindings();
   var listeningForKey = null;
@@ -369,6 +377,7 @@
     el.missedHint = document.getElementById("missed-hint");
     el.missedList = document.getElementById("missed-list");
     el.missedEmpty = document.getElementById("missed-empty");
+    el.btnClearMissed = document.getElementById("btn-clear-missed");
 
     el.btnQuizExit = document.getElementById("btn-quiz-exit");
     el.btnQuizExitLabel = document.getElementById("btn-quiz-exit-label");
@@ -606,6 +615,13 @@
       showView(missedReturnView);
     });
     el.btnMissedPractice.addEventListener("click", startMissedSession);
+    el.btnClearMissed.addEventListener("click", function () {
+      showConfirm(t("clearMissedConfirm"), function () {
+        missedClearedAt = Date.now();
+        saveMissedClearedAt();
+        buildMissedScreen();
+      });
+    });
     el.btnBookmark.addEventListener("click", function () {
       if (!session) return;
       toggleBookmark(session.questions[session.index].id);
@@ -672,6 +688,8 @@
       showConfirm(t("resetConfirm"), function () {
         stats = {};
         saveStats();
+        missedClearedAt = 0;
+        saveMissedClearedAt();
         buildStatsScreen();
       });
     });
@@ -790,6 +808,7 @@
     el.btnMissedExitLabel.textContent = t("back");
     el.missedHeadingEl.textContent = t("missedHeading");
     el.btnMissedPractice.textContent = t("missedPractice");
+    el.btnClearMissed.textContent = t("clearMissed");
     el.examTitleEl.textContent = t("examTitle");
     updateExamSub();
     el.examStateLabel.textContent = t("examStateLabel");
@@ -1374,7 +1393,7 @@
       var entries = [];
       Object.keys(stats).forEach(function (key) {
         var s = stats[key];
-        if (s.wrong > 0 && DATA_BY_ID[key] !== undefined) {
+        if (isMissed(s) && DATA_BY_ID[key] !== undefined) {
           var attempts = s.correct + s.wrong;
           var accuracy = attempts > 0 ? s.correct / attempts : 0;
           entries.push({ id: key, accuracy: accuracy, lastWrong: s.lastWrong || 0 });
@@ -1396,6 +1415,12 @@
       return shuffle(chosen);
     }
     return [];
+  }
+
+  // Wrong at least once, and (if the list was cleared) wrong again since then.
+  function isMissed(s) {
+    if (!s || !(s.wrong > 0)) return false;
+    return missedClearedAt === 0 || (s.lastWrong || 0) > missedClearedAt;
   }
 
   // ---------- Quiz session ----------
@@ -1834,6 +1859,7 @@
     el.missedList.innerHTML = "";
     el.missedActions.hidden = questions.length === 0;
     el.missedEmpty.hidden = questions.length > 0;
+    el.btnClearMissed.hidden = questions.length === 0;
     el.missedEmpty.textContent = t("reviewMissedEmpty");
     el.missedHint.textContent = t("missedListHint");
     el.btnMissedPractice.textContent = t("missedPractice") + " (" + questions.length + ")";
@@ -1907,6 +1933,7 @@
       stats: stats,
       bookmarks: bookmarks,
       examHistory: examHistory,
+      missedClearedAt: missedClearedAt,
       examState: examState,
       language: language,
       theme: theme,
@@ -2017,6 +2044,7 @@
     if (parsed.stats && typeof parsed.stats === "object") stats = parsed.stats;
     if (parsed.bookmarks && typeof parsed.bookmarks === "object") bookmarks = parsed.bookmarks;
     if (Array.isArray(parsed.examHistory)) examHistory = parsed.examHistory;
+    missedClearedAt = typeof parsed.missedClearedAt === "number" ? parsed.missedClearedAt : 0;
     if (typeof parsed.examState === "string") examState = parsed.examState;
     if (LANGUAGES.indexOf(parsed.language) !== -1) {
       language = parsed.language;
@@ -2030,6 +2058,7 @@
     saveStats();
     saveBookmarks();
     saveExamHistory();
+    saveMissedClearedAt();
     saveExamState(examState);
     saveLanguage(language);
     saveTheme(theme);
@@ -2386,6 +2415,19 @@
     } catch (e) {
       return [];
     }
+  }
+  function loadMissedClearedAt() {
+    try {
+      var n = parseInt(window.localStorage.getItem(MISSED_CLEARED_KEY), 10);
+      return n > 0 ? n : 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+  function saveMissedClearedAt() {
+    try {
+      window.localStorage.setItem(MISSED_CLEARED_KEY, String(missedClearedAt));
+    } catch (e) { /* storage unavailable — fail silently */ }
   }
   function saveExamHistory() {
     try {

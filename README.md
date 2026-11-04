@@ -39,9 +39,13 @@ Once it has loaded, the app and all questions work offline. Audio clips and imag
 
 After regenerating clips or images, change `MEDIA_CACHE` in both `sw.js` and `app.js`. Otherwise installed copies keep the old files.
 
+After changing `app.js` or `styles.css`, raise the `?v=` number where `index.html` loads them. Otherwise, for up to 10 minutes after you publish, a browser that refreshes the page can run the new page with the old script.
+
 ## Missed questions
 
 Select **Missed questions** (Falsch beantwortet) on the start screen, or **View missed questions** on the stats screen, to see every question you've answered wrong. Your weakest ones are at the top. Each question shows how often you got it wrong and right, with the correct answer in green and the wrong answer you picked last in red. Select **Practice these questions** to go through them as a quiz.
+
+To start the list over, select **Clear list…** at the bottom. Your stats are kept, and questions you get wrong after that show up in the list again.
 
 ## Language
 
