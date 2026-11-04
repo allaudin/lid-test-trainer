@@ -309,6 +309,7 @@
   function init() {
     cacheDom();
     wireGlobalControls();
+    wireBackGesture();
     registerServiceWorker();
     fetch("data.json")
       .then(function (res) {
@@ -861,6 +862,59 @@
     session = null;
     if (DATA.length) buildStartScreen();
     showView("start");
+  }
+
+  // ---------- Back gesture ----------
+  // The app is one page, so a back swipe would leave it. In an installed app,
+  // Firefox for Android then shows a black screen that stays. So we keep one
+  // extra history entry for back to use up: it goes back one screen, and on
+  // the start screen it does nothing. Android's home gesture still leaves.
+  var BACK_EXIT_BUTTON = {
+    "view-quiz": "btn-quiz-exit",
+    "view-summary": "btn-summary-home",
+    "view-review": "btn-review-exit",
+    "view-missed": "btn-missed-exit",
+    "view-exam-history": "btn-exam-history-exit",
+    "view-stats": "btn-stats-exit",
+    "view-settings": "btn-settings-exit",
+    "view-shortcuts": "btn-shortcuts-exit",
+    "view-data": "btn-data-exit"
+  };
+  var backEntryAdded = false;
+
+  function addBackEntry() {
+    if (backEntryAdded) return;
+    try {
+      window.history.pushState({ lidBack: true }, "");
+      backEntryAdded = true;
+    } catch (e) { /* history unavailable — back leaves the app as before */ }
+  }
+
+  function wireBackGesture() {
+    // Browsers skip history entries a page adds before the user has touched
+    // it, so add the first one on the first tap or key press.
+    ["pointerdown", "keydown"].forEach(function (type) {
+      document.addEventListener(type, addBackEntry, true);
+    });
+    window.addEventListener("popstate", function () {
+      backEntryAdded = false;
+      addBackEntry();
+      goBackOneScreen();
+    });
+  }
+
+  function goBackOneScreen() {
+    if (!el.appModalOverlay.classList.contains("hidden")) {
+      cancelModal();
+      return;
+    }
+    var views = document.querySelectorAll("#main > .view");
+    for (var i = 0; i < views.length; i++) {
+      if (views[i].classList.contains("hidden")) continue;
+      var exitId = BACK_EXIT_BUTTON[views[i].id];
+      if (exitId) document.getElementById(exitId).click();
+      return;
+    }
   }
 
   // ---------- Modal (replaces native confirm()/alert(), which sandboxed embeds

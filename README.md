@@ -35,6 +35,8 @@ python3 tools/generate_audio.py
 
 The app is a progressive web app. On desktop Chrome or Edge, use the install button in the address bar. On Android, choose **Add to Home screen** from the browser menu. On iPhone, open the site in Safari and choose **Share**, then **Add to Home Screen**.
 
+The back button or back swipe takes you to the previous screen. On the start screen it does nothing, so leave the app with your phone's home gesture or app switcher. This works around a Firefox for Android bug that leaves a black screen when back closes an installed app.
+
 Once it has loaded, the app and all questions work offline. Audio clips and images are saved the first time they're used. To save all of them at once (about 107 MB), open **Settings** (Einstellungen) and select **Download all media** (Alle Medien herunterladen). You can cancel and resume the download, and remove the files from the same place.
 
 After regenerating clips or images, change `MEDIA_CACHE` in both `sw.js` and `app.js`. Otherwise installed copies keep the old files.
