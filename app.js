@@ -1697,6 +1697,7 @@
     });
 
     if (!session.isExam && q.explanation_de && !el.quizExplanation.hidden) {
+      setGermanText(el.quizExplanationDe, q.explanation_de);
       if (translated(q, "explanation")) {
         el.quizExplanationEn.hidden = false;
         el.quizExplanationEn.textContent = translated(q, "explanation");
@@ -1755,7 +1756,7 @@
       el.quizScore.textContent = t("score") + ": " + session.score + "/" + (session.index + 1);
       if (q.explanation_de) {
         el.quizExplanation.hidden = false;
-        el.quizExplanationDe.textContent = q.explanation_de;
+        setGermanText(el.quizExplanationDe, q.explanation_de);
         if (translated(q, "explanation")) {
           el.quizExplanationEn.hidden = false;
           el.quizExplanationEn.textContent = translated(q, "explanation");
@@ -1943,7 +1944,7 @@
       explLabel.textContent = t("explanationLabel");
       var explDe = document.createElement("p");
       explDe.className = "review-item-explanation-text";
-      explDe.textContent = q.explanation_de;
+      setGermanText(explDe, q.explanation_de);
       expl.appendChild(explLabel);
       expl.appendChild(explDe);
       if (translated(q, "explanation")) {
