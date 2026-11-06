@@ -11,6 +11,7 @@ var SHELL_FILES = [
   "styles.css",
   "app.js",
   "data.json",
+  "glossary.json",
   "manifest.webmanifest",
   "icons/icon-180.png",
   "icons/icon-192.png",

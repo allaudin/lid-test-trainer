@@ -277,6 +277,7 @@
 
   var DATA = [];
   var DATA_BY_ID = {};
+  var GLOSSARY = {}; // German word form -> short English meaning (glossary.json)
   var CATEGORY_DE_BY_EN = {};
   var CATEGORY_UR_BY_EN = {};
   var stats = loadStats();
@@ -326,6 +327,7 @@
         populateExamStateSelect();
         buildStartScreen();
         showView("start");
+        loadGlossary();
       })
       .catch(function (err) {
         showLoadError(err);
@@ -1170,6 +1172,63 @@
     el.btnAudio.setAttribute("aria-label", label);
   }
 
+  // ---------- Word glossary ----------
+  // In English mode, German nouns and verbs get their English meaning after
+  // them, to help learn the vocabulary. The app works without the file.
+  function loadGlossary() {
+    fetch("glossary.json")
+      .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function (json) {
+        GLOSSARY = json || {};
+        refreshGermanText();
+      })
+      .catch(function () { /* no glossary — German text stays plain */ });
+  }
+
+  function glossFor(word) {
+    if (Object.prototype.hasOwnProperty.call(GLOSSARY, word)) return GLOSSARY[word];
+    var lower = word.charAt(0).toLowerCase() + word.slice(1); // sentence-initial verb
+    if (lower !== word && Object.prototype.hasOwnProperty.call(GLOSSARY, lower)) return GLOSSARY[lower];
+    return "";
+  }
+
+  // Fills node with German text, adding meanings in English mode.
+  function setGermanText(node, text) {
+    node.textContent = "";
+    if (language !== "en") {
+      node.textContent = text;
+      return;
+    }
+    var wordRe = /[A-Za-zÄÖÜäöüß]+(?:-[A-Za-zÄÖÜäöüß]+)*/g;
+    var seen = {};
+    var last = 0;
+    var match;
+    while ((match = wordRe.exec(text)) !== null) {
+      var word = match[0];
+      var gloss = seen[word] ? "" : glossFor(word);
+      if (!gloss) continue;
+      seen[word] = true;
+      var end = match.index + word.length;
+      node.appendChild(document.createTextNode(text.slice(last, end)));
+      var span = document.createElement("span");
+      span.className = "gloss";
+      span.textContent = gloss;
+      node.appendChild(span);
+      last = end;
+    }
+    node.appendChild(document.createTextNode(text.slice(last)));
+  }
+
+  // Redraws German text after the glossary loads.
+  function refreshGermanText() {
+    if (session && !session.finished && !el.viewQuiz.classList.contains("hidden")) refreshQuestionLanguage();
+    if (!el.viewReview.classList.contains("hidden")) buildReviewScreen();
+    if (!el.viewMissed.classList.contains("hidden")) buildMissedScreen();
+  }
+
   // ---------- Translations ----------
   // Translated value of a question field such as "question", or "" in German mode.
   function translated(q, field) {
@@ -1545,7 +1604,7 @@
       el.quizImage.removeAttribute("src");
     }
 
-    el.quizQuestionDe.textContent = q.question_de;
+    setGermanText(el.quizQuestionDe, q.question_de);
     if (language !== "de") {
       el.quizQuestionEn.hidden = false;
       el.quizQuestionEn.textContent = translated(q, "question");
@@ -1581,7 +1640,7 @@
 
       var deLine = document.createElement("div");
       deLine.className = "answer-text-de";
-      deLine.textContent = ans.text_de;
+      setGermanText(deLine, ans.text_de);
       textWrap.appendChild(deLine);
 
       var answerText = answerTranslation(ans);
@@ -1609,6 +1668,7 @@
 
     el.quizCategory.textContent = q.category_de + (language !== "de" ? " · " + categoryTranslation(q.category_en) : "");
     if (q.img && q.img.url) el.quizImage.alt = q.question_en || q.question_de;
+    setGermanText(el.quizQuestionDe, q.question_de);
 
     if (language !== "de") {
       el.quizQuestionEn.hidden = false;
@@ -1621,6 +1681,7 @@
     buttons.forEach(function (b, i) {
       var ans = session.shuffledAnswers[i];
       var textWrap = b.querySelector(".answer-text-wrap");
+      setGermanText(b.querySelector(".answer-text-de"), ans.text_de);
       var enLine = b.querySelector(".answer-text-en");
       var answerText = answerTranslation(ans);
       if (answerText) {
@@ -1844,7 +1905,7 @@
 
     var question = document.createElement("p");
     question.className = "review-item-question";
-    question.textContent = q.question_de;
+    setGermanText(question, q.question_de);
     item.appendChild(question);
     if (language !== "de") {
       var questionEn = document.createElement("p");
@@ -1860,7 +1921,9 @@
       row.className = "review-item-answer";
       if (origIdx === q.correct) row.classList.add("is-correct-answer");
       else if (origIdx === opts.wrongIndex) row.classList.add("is-wrong-chosen");
-      row.textContent = text;
+      var rowGerman = document.createElement("span");
+      setGermanText(rowGerman, text);
+      row.appendChild(rowGerman);
       var rowTranslation = language === "de" ? "" : (q["answers_" + language] || [])[origIdx];
       if (rowTranslation && rowTranslation !== text) {
         var rowLine = document.createElement("div");
