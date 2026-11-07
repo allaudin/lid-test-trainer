@@ -103,10 +103,11 @@
       ur: "غلط جواب والے سوالات کی فہرست صاف کریں؟ آپ کے اعداد و شمار محفوظ رہیں گے۔ اس کے بعد غلط جواب والے سوالات یہاں دوبارہ آئیں گے۔"
     },
     missedListHint: {
-      de: "Die schwächsten Fragen stehen oben. Grün ist die richtige Antwort, rot deine letzte falsche Antwort.",
-      en: "Your weakest questions are at the top. Green is the correct answer, red is the wrong answer you picked last.",
-      ur: "سب سے کمزور سوالات سب سے اوپر ہیں۔ سبز درست جواب ہے، سرخ وہ غلط جواب ہے جو آپ نے آخری بار چنا۔"
+      de: "Nach Kategorie sortiert, die schwächsten Fragen zuerst. Tippe auf eine Kategorie, um sie zu öffnen. Grün ist die richtige Antwort, rot deine letzte falsche Antwort.",
+      en: "Grouped by category, weakest questions first. Tap a category to open it. Green is the correct answer, red is the wrong answer you picked last.",
+      ur: "زمرے کے لحاظ سے ترتیب، سب سے کمزور سوالات پہلے۔ کسی زمرے کو کھولنے کے لیے اس پر ٹیپ کریں۔ سبز درست جواب ہے، سرخ وہ غلط جواب ہے جو آپ نے آخری بار چنا۔"
     },
+    missedPracticeCategory: { de: "Diese Kategorie üben", en: "Practice this category", ur: "اس زمرے کی مشق کریں" },
     reviewMissedEmpty: { de: "Noch keine falschen Antworten — übe weiter, dann füllt sich das hier.", en: "No missed questions yet — keep practicing and this will fill in.", ur: "ابھی کوئی غلط جواب نہیں — مشق جاری رکھیں، یہ فہرست بھر جائے گی۔" },
     reviewMissedHint: { de: "Sortiert nach den schwächsten und zuletzt falsch beantworteten Fragen.", en: "Ordered so your weakest and most recently missed questions come first.", ur: "سب سے کمزور اور حال ہی میں غلط ہونے والے سوالات پہلے دکھائے جاتے ہیں۔" },
     resetStats: { de: "Statistik zurücksetzen…", en: "Reset all stats…", ur: "تمام اعداد و شمار صاف کریں…" },
@@ -1506,7 +1507,8 @@
       var entries = [];
       Object.keys(stats).forEach(function (key) {
         var s = stats[key];
-        if (isMissed(s) && DATA_BY_ID[key] !== undefined) {
+        if (isMissed(s) && DATA_BY_ID[key] !== undefined &&
+            (!scope.category_en || DATA_BY_ID[key].category_en === scope.category_en)) {
           var attempts = s.correct + s.wrong;
           var accuracy = attempts > 0 ? s.correct / attempts : 0;
           entries.push({ id: key, accuracy: accuracy, lastWrong: s.lastWrong || 0 });
@@ -1982,17 +1984,76 @@
     el.missedHint.textContent = t("missedListHint");
     el.btnMissedPractice.textContent = t("missedPractice") + " (" + questions.length + ")";
 
+    var byCategory = {};
+    questions.forEach(function (q) {
+      (byCategory[q.category_en] = byCategory[q.category_en] || []).push(q);
+    });
+    var openAll = Object.keys(byCategory).length === 1;
+    [[t("byTopic"), GENERAL_ORDER], [t("byState"), STATE_ORDER]].forEach(function (section) {
+      var names = section[1].filter(function (name) { return byCategory[name]; });
+      if (names.length === 0) return;
+      var heading = document.createElement("h3");
+      heading.className = "section-heading missed-section-heading";
+      heading.textContent = section[0];
+      el.missedList.appendChild(heading);
+      names.forEach(function (name) {
+        el.missedList.appendChild(makeMissedGroup(name, byCategory[name], openAll));
+      });
+    });
+  }
+
+  function makeMissedGroup(nameEn, questions, open) {
+    var group = document.createElement("details");
+    group.className = "missed-group";
+    group.open = open;
+
+    var summary = document.createElement("summary");
+    summary.className = "scope-item missed-group-summary";
+    var nameWrap = document.createElement("span");
+    nameWrap.className = "scope-item-names";
+    var nameDe = CATEGORY_DE_BY_EN[nameEn] || nameEn;
+    var nameSpan = document.createElement("span");
+    nameSpan.className = "scope-item-name";
+    nameSpan.textContent = nameDe;
+    nameWrap.appendChild(nameSpan);
+    var nameTranslated = categoryTranslation(nameEn);
+    if (nameTranslated && nameTranslated !== nameDe) {
+      var nameEnSpan = document.createElement("span");
+      nameEnSpan.className = "scope-item-name-en";
+      nameEnSpan.textContent = nameTranslated;
+      nameWrap.appendChild(nameEnSpan);
+    }
+    summary.appendChild(nameWrap);
+    var countSpan = document.createElement("span");
+    countSpan.className = "scope-item-count missed-group-count";
+    countSpan.textContent = String(questions.length);
+    summary.appendChild(countSpan);
+    group.appendChild(summary);
+
+    var body = document.createElement("div");
+    body.className = "missed-group-body";
+    var practice = document.createElement("button");
+    practice.type = "button";
+    practice.className = "btn btn-secondary btn-small missed-group-practice";
+    practice.textContent = t("missedPracticeCategory") + " (" + questions.length + ")";
+    practice.addEventListener("click", function () {
+      startSession({ type: "missed", category_en: nameEn, label: t("reviewMissed") + " · " + nameDe });
+    });
+    body.appendChild(practice);
+
     questions.forEach(function (q) {
       var s = stats[String(q.id)];
       var counts = t("reviewWrong") + " " + s.wrong + "×";
       if (s.correct > 0) counts += " · " + t("reviewCorrect") + " " + s.correct + "×";
-      el.missedList.appendChild(makeReviewItem(q, {
+      body.appendChild(makeReviewItem(q, {
         label: q.category_de,
         statusCls: "is-wrong",
         statusText: counts,
         wrongIndex: typeof s.lastWrongChoice === "number" ? s.lastWrongChoice : null
       }));
     });
+    group.appendChild(body);
+    return group;
   }
 
   // ---------- Exam history screen ----------

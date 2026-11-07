@@ -45,7 +45,7 @@ After changing `app.js` or `styles.css`, raise the `?v=` number where `index.htm
 
 ## Missed questions
 
-Select **Missed questions** (Falsch beantwortet) on the start screen, or **View missed questions** on the stats screen, to see every question you've answered wrong. Your weakest ones are at the top. Each question shows how often you got it wrong and right, with the correct answer in green and the wrong answer you picked last in red. Select **Practice these questions** to go through them as a quiz.
+Select **Missed questions** (Falsch beantwortet) on the start screen, or **View missed questions** on the stats screen, to see every question you've answered wrong. They are grouped by category in the same order as the start screen (**By topic**, then **By state**), and each category shows how many questions you missed. Select a category to open it; within it your weakest questions come first. Each question shows how often you got it wrong and right, with the correct answer in green and the wrong answer you picked last in red. Select **Practice this category** to practise only that category's questions, or **Practice these questions** at the top to go through all of them as a quiz.
 
 To start the list over, select **Clear list…** at the bottom. Your stats are kept, and questions you get wrong after that show up in the list again.
 

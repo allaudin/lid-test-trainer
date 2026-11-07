@@ -959,3 +959,25 @@ label.btn { display: block; text-align: center; box-sizing: border-box; }
   padding: 16px 16px max(16px, env(safe-area-inset-bottom));
   border-top: 1px solid var(--border);
 }
+
+/* ---------- Missed questions grouped by category ---------- */
+.missed-section-heading { margin: 14px 0 2px; }
+.missed-section-heading:first-child { margin-top: 0; }
+.missed-group { display: flex; flex-direction: column; }
+.missed-group-summary { list-style: none; width: 100%; }
+.missed-group-summary::-webkit-details-marker { display: none; }
+.missed-group-summary::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
+  transform: rotate(45deg);
+  margin: -4px 4px 0 6px;
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+.missed-group[open] > .missed-group-summary::after { transform: rotate(-135deg); margin-top: 4px; }
+.missed-group-count { margin-left: auto; color: var(--status-critical); background: var(--wrong-bg); }
+.missed-group-body { display: flex; flex-direction: column; gap: 12px; padding: 12px 0 8px; }
+.missed-group-practice { align-self: flex-start; }
